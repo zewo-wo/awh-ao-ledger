@@ -1,0 +1,2826 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Albion Warlord Hub — Dashboard, Battleboard &amp; Merchantry Ledger</title>
+  <meta name="theme-color" content="#0D0B0C">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Rajdhani:wght@600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+  <script>
+    if (typeof tailwind !== 'undefined') {
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            ash: '#0D0B0C',
+            iron: '#1A1517',
+            forge: '#241D20',
+            rim: '#352A2E',
+            crimson: { 500: '#EF4444', 600: '#DC2626', 700: '#B91C1C', 950: '#3B0A0A' },
+            ember: { 400: '#FBBF24', 500: '#F59E0B', 600: '#D97706' },
+            bone: '#F8F4F2',
+            cinder: '#A89F9D',
+            jade: '#10B981',
+            exec: '#F43F5E'
+          },
+          fontFamily: {
+            display: ['Rajdhani', 'Inter', 'sans-serif'],
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+            mono: ['JetBrains Mono', 'ui-monospace', 'monospace']
+          }
+        }
+      }
+    };
+    }
+  </script>
+  <style>
+    * { box-sizing: border-box; }
+    html, body { background: #0D0B0C; color: #F8F4F2; font-family: 'Inter', sans-serif; margin: 0; }
+    .font-display { font-family: 'Rajdhani', 'Inter', sans-serif; }
+    .tabular { font-variant-numeric: tabular-nums; }
+    ::-webkit-scrollbar { width: 7px; height: 7px; }
+    ::-webkit-scrollbar-track { background: #0D0B0C; }
+    ::-webkit-scrollbar-thumb { background: #352A2E; border-radius: 99px; }
+    ::-webkit-scrollbar-thumb:hover { background: #DC2626; }
+    .war-card { background: #1A1517; border: 1px solid #352A2E; border-radius: 12px; }
+    .war-card-elev { background: #241D20; border: 1px solid #3D3135; border-radius: 10px; }
+    .nav-item { display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; text-align: left; padding: 8px 11px; border-radius: 8px; font-size: 13px; font-weight: 500; color: #A89F9D; transition: all 0.15s ease; }
+    .nav-item:hover { background: #241D20; color: #F8F4F2; }
+    .nav-item.active { background: linear-gradient(90deg, rgba(220,38,38,0.22), rgba(220,38,38,0.04)); color: #F8F4F2; border-left: 3px solid #DC2626; font-weight: 600; }
+    .war-input { background: #0D0B0C; border: 1px solid #352A2E; color: #F8F4F2; border-radius: 8px; padding: 7px 11px; font-size: 13px; outline: none; transition: border-color 0.15s; }
+    .war-input:focus { border-color: #DC2626; }
+    .btn-primary { background: #DC2626; color: #F8F4F2; font-weight: 600; border-radius: 8px; padding: 8px 14px; font-size: 13px; transition: background 0.15s; }
+    .btn-primary:hover { background: #B91C1C; }
+    .btn-amber { background: #F59E0B; color: #0D0B0C; font-weight: 700; border-radius: 8px; padding: 8px 14px; font-size: 13px; transition: background 0.15s; }
+    .btn-amber:hover { background: #D97706; }
+    .btn-ghost { background: #241D20; border: 1px solid #352A2E; color: #F8F4F2; font-weight: 500; border-radius: 8px; padding: 7px 12px; font-size: 12px; transition: all 0.15s; }
+    .btn-ghost:hover { border-color: #DC2626; color: #FFFFFF; }
+    .badge-hot { background: rgba(220,38,38,0.2); color: #FCA5A5; border: 1px solid rgba(220,38,38,0.45); font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 99px; }
+    .badge-new { background: rgba(245,158,11,0.18); color: #FCD34D; border: 1px solid rgba(245,158,11,0.45); font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 99px; }
+    .badge-live { background: rgba(16,185,129,0.18); color: #6EE7B7; border: 1px solid rgba(16,185,129,0.45); font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 99px; }
+    .view-panel { display: none; }
+    .view-panel.active { display: block; animation: fadeIn 0.16s ease-out; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(3px); } to { opacity: 1; transform: translateY(0); } }
+    .chip { padding: 4px 10px; border-radius: 99px; font-size: 12px; font-weight: 500; background: #241D20; border: 1px solid #352A2E; color: #A89F9D; cursor: pointer; transition: all 0.15s; }
+    .chip:hover { color: #F8F4F2; border-color: #6B5258; }
+    .chip.active { background: rgba(220,38,38,0.22); border-color: #DC2626; color: #F8F4F2; }
+    .gear-slot { width: 42px; height: 42px; border-radius: 8px; background: #0D0B0C; border: 1px solid #352A2E; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+    .toast-box { position: fixed; bottom: 20px; right: 20px; z-index: 60; display: flex; flex-direction: column; gap: 8px; max-width: 360px; }
+    .search-dropdown { position: absolute; left: 0; right: 0; top: calc(100% + 4px); z-index: 50; background: #1A1517; border: 1px solid #352A2E; border-radius: 10px; max-height: 260px; overflow-y: auto; box-shadow: 0 12px 28px rgba(0,0,0,0.6); }
+    .search-opt { width: 100%; text-align: left; padding: 8px 12px; font-size: 12px; display: flex; justify-content: space-between; align-items: center; gap: 8px; border-bottom: 1px solid rgba(53,42,46,0.5); }
+    .search-opt:hover { background: #241D20; }
+  </style>
+  <link rel="manifest" href="./manifest.json">
+  <link rel="icon" type="image/webp" href="./silver-ledger-brand-crest.webp">
+</head>
+<body class="min-h-screen flex flex-col bg-ash text-bone">
+  <!-- TOP HEADER BAR -->
+  <header class="sticky top-0 z-40 bg-iron/95 backdrop-blur border-b border-rim">
+    <div class="px-3 lg:px-5 h-14 flex items-center justify-between gap-3">
+      <div class="flex items-center gap-2.5 min-w-0">
+        <button id="mobile-menu-btn" type="button" class="lg:hidden btn-ghost p-2" aria-label="Toggle sidebar">
+          <i data-lucide="menu" class="w-4 h-4"></i>
+        </button>
+        <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-crimson-600 to-crimson-950 border border-ember-500/60 flex items-center justify-center shrink-0 shadow-lg shadow-crimson-600/20">
+          <i data-lucide="swords" class="w-5 h-5 text-ember-400"></i>
+        </div>
+        <div class="min-w-0">
+          <div class="flex items-center gap-2">
+            <span class="font-display text-lg font-bold tracking-wide text-bone truncate">ALBION WARLORD HUB</span>
+            <span class="hidden sm:inline-block badge-hot">OUTLANDS</span>
+          </div>
+          <p class="text-[11px] text-cinder truncate hidden sm:block">Battleboard · Merchantry Ledger · Loot &amp; Economy Suite</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2 shrink-0">
+        <div class="hidden md:flex items-center bg-ash border border-rim rounded-lg p-0.5" role="group" aria-label="Server Region">
+          <button type="button" data-server="west" class="srv-btn px-2.5 py-1 rounded-md text-xs font-semibold transition bg-crimson-600 text-bone">NA</button>
+          <button type="button" data-server="europe" class="srv-btn px-2.5 py-1 rounded-md text-xs font-semibold transition text-cinder hover:text-bone">EU</button>
+          <button type="button" data-server="east" class="srv-btn px-2.5 py-1 rounded-md text-xs font-semibold transition text-cinder hover:text-bone">AS</button>
+        </div>
+        <button id="btn-sync-now" type="button" class="btn-primary flex items-center gap-1.5 text-xs">
+          <span id="conn-dot" class="w-2 h-2 rounded-full bg-jade"></span>
+          <span id="conn-label">Sync All</span>
+          <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- SECONDARY LIVE STATUS & TICKER BAR -->
+    <div class="bg-ash border-t border-rim/80 px-3 lg:px-5 py-1.5 flex items-center justify-between gap-4 overflow-x-auto text-xs font-mono whitespace-nowrap">
+      <div class="flex items-center gap-4">
+        <span class="text-cinder">UTC <strong id="ticker-utc" class="text-bone tabular">--:--:--</strong></span>
+        <span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-jade"></span><span class="text-cinder">NA</span><span class="text-jade">ON</span></span>
+        <span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-jade"></span><span class="text-cinder">EU</span><span class="text-jade">ON</span></span>
+        <span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-jade"></span><span class="text-cinder">AS</span><span class="text-jade">ON</span></span>
+      </div>
+      <div class="flex items-center gap-5">
+        <button type="button" data-nav="bandit" class="text-ember-400 hover:underline">BANDIT: <span id="ticker-bandit" class="tabular">--:--:--</span></button>
+        <button type="button" data-nav="gold" class="text-bone hover:text-ember-400">GOLD: <strong id="ticker-gold" class="text-ember-400 tabular">—</strong></button>
+        <button type="button" data-nav="gold" class="text-cinder hover:text-bone">PREMIUM 30D: <strong id="ticker-prem" class="text-bone tabular">—</strong></button>
+      </div>
+    </div>
+  </header>
+
+  <div class="flex flex-1 min-h-0 relative">
+    <!-- MOBILE SIDEBAR OVERLAY -->
+    <div id="sidebar-backdrop" class="fixed inset-0 bg-black/70 z-30 hidden lg:hidden"></div>
+
+    <!-- COLLAPSIBLE LEFT SIDEBAR -->
+    <aside id="sidebar" class="fixed lg:sticky top-0 lg:top-[89px] left-0 z-40 lg:z-20 w-64 h-screen lg:h-[calc(100vh-89px)] bg-iron border-r border-rim overflow-y-auto p-3 flex flex-col gap-4 -translate-x-full lg:translate-x-0 transition-transform duration-200 shrink-0">
+      <div class="flex items-center justify-between lg:hidden pb-2 border-b border-rim">
+        <span class="font-display font-bold text-bone">NAVIGATION</span>
+        <button id="close-sidebar-btn" type="button" class="btn-ghost p-1"><i data-lucide="x" class="w-4 h-4"></i></button>
+      </div>
+
+      <div class="md:hidden flex items-center bg-ash border border-rim rounded-lg p-0.5">
+        <button type="button" data-server="west" class="srv-btn flex-1 py-1 rounded text-xs font-semibold bg-crimson-600 text-bone">NA</button>
+        <button type="button" data-server="europe" class="srv-btn flex-1 py-1 rounded text-xs font-semibold text-cinder">EU</button>
+        <button type="button" data-server="east" class="srv-btn flex-1 py-1 rounded text-xs font-semibold text-cinder">AS</button>
+      </div>
+
+      <div>
+        <button type="button" data-nav="dashboard" class="nav-item active"><span class="flex items-center gap-2"><i data-lucide="layout-dashboard" class="w-4 h-4 text-crimson-500"></i>Dashboard</span><span class="badge-live">SYNC</span></button>
+      </div>
+
+      <div>
+        <div class="px-2 mb-1.5 text-[10px] font-bold uppercase tracking-widest text-cinder">Combat</div>
+        <div class="space-y-0.5">
+          <button type="button" data-nav="battleboard" class="nav-item"><span class="flex items-center gap-2"><i data-lucide="swords" class="w-4 h-4"></i>Battleboard</span><span class="badge-hot">ZVZ</span></button>
+          <button type="button" data-nav="killboard" class="nav-item"><span class="flex items-center gap-2"><i data-lucide="skull" class="w-4 h-4"></i>Killboard</span></button>
+          <button type="button" data-nav="builds" class="nav-item"><span class="flex items-center gap-2"><i data-lucide="shield" class="w-4 h-4"></i>Builds</span><span class="badge-new">META</span></button>
+        </div>
+      </div>
+
+      <div>
+        <div class="px-2 mb-1.5 text-[10px] font-bold uppercase tracking-widest text-cinder">Explore</div>
+        <div class="space-y-0.5">
+          <button type="button" data-nav="explore" class="nav-item"><span class="flex items-center gap-2"><i data-lucide="users" class="w-4 h-4"></i>Players &amp; Guilds</span></button>
+          <button type="button" data-nav="rankings" class="nav-item"><span class="flex items-center gap-2"><i data-lucide="trophy" class="w-4 h-4"></i>Rankings</span></button>
+          <button type="button" data-nav="bandit" class="nav-item"><span class="flex items-center gap-2"><i data-lucide="flag" class="w-4 h-4"></i>Bandit Assault</span><span class="badge-new">LIVE</span></button>
+        </div>
+      </div>
+
+      <div>
+        <div class="px-2 mb-1.5 text-[10px] font-bold uppercase tracking-widest text-cinder">Tools &amp; Maps</div>
+        <div class="space-y-0.5">
+          <button type="button" data-nav="lootsplit" class="nav-item"><span class="flex items-center gap-2"><i data-lucide="coins" class="w-4 h-4"></i>Loot Split &amp; CSV</span><span class="badge-hot">PRO</span></button>
+          <button type="button" data-nav="avalon" class="nav-item"><span class="flex items-center gap-2"><i data-lucide="map" class="w-4 h-4"></i>Avalon Maps</span></button>
+        </div>
+      </div>
+
+      <div>
+        <div class="px-2 mb-1.5 text-[10px] font-bold uppercase tracking-widest text-cinder">Economy &amp; Ledger</div>
+        <div class="space-y-0.5">
+          <button type="button" data-nav="crafting" class="nav-item"><span class="flex items-center gap-2"><i data-lucide="hammer" class="w-4 h-4"></i>Crafting &amp; Refining</span><span class="badge-new">LEDGER</span></button>
+          <button type="button" data-nav="trends" class="nav-item"><span class="flex items-center gap-2"><i data-lucide="trending-up" class="w-4 h-4"></i>Market &amp; Alerts</span></button>
+          <button type="button" data-nav="island" class="nav-item"><span class="flex items-center gap-2"><i data-lucide="sprout" class="w-4 h-4"></i>Island Planner</span><span class="badge-new">NEW</span></button>
+          <button type="button" data-nav="gold" class="nav-item"><span class="flex items-center gap-2"><i data-lucide="gem" class="w-4 h-4"></i>Gold &amp; Premium</span></button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- MAIN CONTENT WORKSPACE -->
+    <main class="flex-1 min-w-0 p-4 lg:p-6 max-w-7xl mx-auto w-full">
+
+      <!-- 1. DASHBOARD (SYNCS & SHOWS ALL FEATURES) -->
+      <section id="view-dashboard" class="view-panel active space-y-6">
+        <div class="war-card p-6 relative overflow-hidden bg-gradient-to-br from-iron via-iron to-crimson-950/50">
+          <div class="flex flex-wrap items-start justify-between gap-4">
+            <div class="max-w-2xl">
+              <span class="badge-hot mb-2 inline-block">BLACK ZONE WARLORD · UNIFIED DASHBOARD</span>
+              <h1 class="font-display text-3xl sm:text-4xl font-bold tracking-tight text-bone">Dashboard</h1>
+              <p class="text-sm text-cinder mt-1.5">Central command syncing all Combat, Explore, Loot, Avalon, Crafting, Market, and Gold features for <strong id="dash-region-label" class="text-bone">Americas (NA)</strong>. Every tool starts clean—click <strong>Sync All</strong> to pull live server data or jump directly into any module below.</p>
+            </div>
+            <div class="flex flex-wrap gap-2">
+              <button id="dash-sync-all-btn" type="button" class="btn-primary flex items-center gap-2"><i data-lucide="refresh-cw" class="w-4 h-4"></i>Sync All Live Data</button>
+              <button type="button" data-nav="crafting" class="btn-amber flex items-center gap-2"><i data-lucide="hammer" class="w-4 h-4"></i>Crafting Ledger</button>
+            </div>
+          </div>
+          <div id="dash-daily-bonus-bar" class="mt-4 p-3 rounded-lg bg-ember-500/10 border border-ember-500/40 flex flex-wrap items-center justify-between gap-2 text-xs">
+            <div class="flex items-center gap-2">
+              <i data-lucide="sparkles" class="w-4 h-4 text-ember-400 shrink-0"></i>
+              <span><strong class="text-ember-400">Daily Production Bonus Notification:</strong> <span id="dash-daily-bonus-text" class="text-bone"></span></span>
+            </div>
+            <button type="button" data-nav="crafting" class="text-ember-400 hover:underline font-semibold">Open Crafting &rarr;</button>
+          </div>
+        </div>
+
+        <!-- ALL-FEATURES SYNCED OVERVIEW GRID -->
+        <div id="dash-features-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"></div>
+
+        <!-- COMBAT CATEGORY: RECENT BATTLES, RECENT KILLS & COMMUNITY BUILDS -->
+        <div class="space-y-3">
+          <div class="flex items-center justify-between">
+            <h2 class="font-display text-xl font-bold tracking-wide text-bone flex items-center gap-2"><i data-lucide="swords" class="w-5 h-5 text-crimson-500"></i>Combat Overview (<span id="dash-bb-region" class="text-ember-400">NA</span>)</h2>
+            <button id="dash-sync-builds-btn" type="button" class="btn-ghost text-xs flex items-center gap-1.5"><i data-lucide="globe" class="w-3.5 h-3.5 text-ember-400"></i>Sync API &amp; Community Builds</button>
+          </div>
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+            <div class="war-card p-5">
+              <div class="flex items-center justify-between mb-3">
+                <h3 class="font-display text-lg font-bold">Recent Battles</h3>
+                <button type="button" data-nav="battleboard" class="text-xs text-crimson-500 hover:underline font-semibold">View all &rarr;</button>
+              </div>
+              <div id="dash-battles-list" class="space-y-2.5"></div>
+            </div>
+            <div class="war-card p-5">
+              <div class="flex items-center justify-between mb-3">
+                <h3 class="font-display text-lg font-bold">Recent Kills</h3>
+                <button type="button" data-nav="killboard" class="text-xs text-crimson-500 hover:underline font-semibold">View all &rarr;</button>
+              </div>
+              <div id="dash-kills-list" class="space-y-2.5"></div>
+            </div>
+            <div class="war-card p-5">
+              <div class="flex items-center justify-between mb-3">
+                <h3 class="font-display text-lg font-bold">Community Builds</h3>
+                <button type="button" data-nav="builds" class="text-xs text-ember-400 hover:underline font-semibold">View all &rarr;</button>
+              </div>
+              <div id="dash-builds-list" class="space-y-2.5"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 2. BATTLEBOARD (SERVER-SCOPED, STARTS BLANK) -->
+      <section id="view-battleboard" class="view-panel space-y-5">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h1 class="font-display text-2xl font-bold">ZvZ Battleboard — <span id="bb-server-heading" class="text-ember-400">Americas (NA)</span></h1>
+            <p class="text-xs text-cinder">Shows battles for the currently selected server (<span class="font-mono text-bone">NA / EU / AS</span>). Switch server above or click Fetch Live to load battles.</p>
+          </div>
+          <div class="flex flex-wrap items-center gap-2">
+            <input id="bb-search" type="text" placeholder="Filter guild or alliance..." class="war-input w-44">
+            <input id="bb-min-players" type="number" min="2" max="300" value="10" class="war-input w-24" title="Min players">
+            <button id="bb-refresh-btn" type="button" class="btn-primary flex items-center gap-1.5"><i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>Fetch Live</button>
+            <label class="btn-ghost cursor-pointer flex items-center gap-1.5">
+              <i data-lucide="upload" class="w-3.5 h-3.5"></i>Import JSON
+              <input id="bb-json-import" type="file" accept=".json" class="hidden">
+            </label>
+          </div>
+        </div>
+
+        <div class="text-xs font-mono text-cinder bg-iron border border-rim rounded-lg px-3 py-2 flex items-center justify-between flex-wrap gap-2">
+          <span id="bb-api-status">Ready — click Fetch Live to load battles for the selected server.</span>
+          <label class="flex items-center gap-1.5 cursor-pointer text-bone">
+            <input id="bb-autorefresh" type="checkbox" checked class="accent-crimson-600"> Auto-refresh (15s)
+          </label>
+        </div>
+
+        <div class="grid grid-cols-1 xl:grid-cols-12 gap-5">
+          <div class="xl:col-span-5 war-card p-4 space-y-2.5 max-h-[640px] overflow-y-auto">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-semibold uppercase text-cinder">Server Battles</span>
+              <span id="bb-count" class="text-xs font-mono text-ember-400">0 battles</span>
+            </div>
+            <div id="bb-list" class="space-y-2"></div>
+          </div>
+
+          <div class="xl:col-span-7 war-card p-5 space-y-4">
+            <div id="bb-detail-header" class="flex flex-wrap items-start justify-between gap-3 border-b border-rim pb-3"></div>
+            <div id="bb-alliance-pills" class="flex flex-wrap gap-2"></div>
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-xs">
+                <thead class="text-cinder border-b border-rim uppercase">
+                  <tr>
+                    <th class="py-2 pr-2">Player</th>
+                    <th class="py-2 pr-2">Guild / Alliance</th>
+                    <th class="py-2 pr-2 text-right">Kills</th>
+                    <th class="py-2 pr-2 text-right">Deaths</th>
+                    <th class="py-2 pr-2 text-right">Kill Fame</th>
+                    <th class="py-2 text-right">Damage / Impact</th>
+                  </tr>
+                </thead>
+                <tbody id="bb-players-body" class="divide-y divide-rim/50 font-mono tabular"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 3. KILLBOARD (RAIDQUEST REFERENCE, STARTS BLANK) -->
+      <section id="view-killboard" class="view-panel space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h1 class="font-display text-2xl font-bold">Recent Kills — <span id="kb-server-heading" class="text-ember-400">Americas (NA)</span></h1>
+            <p class="text-xs text-cinder">Live PvP kills from Albion Online</p>
+          </div>
+          <div class="flex flex-wrap items-center gap-2">
+            <label class="flex items-center gap-1.5 text-xs font-mono text-ember-400 bg-iron border border-rim rounded-lg px-3 py-1.5 cursor-pointer">
+              <input id="kb-autorefresh" type="checkbox" checked class="accent-ember-500">
+              <span>Auto-refresh every 15 seconds</span>
+            </label>
+            <button id="kb-refresh" type="button" class="btn-primary flex items-center gap-1.5"><i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>Refresh now</button>
+            <label class="btn-ghost cursor-pointer flex items-center gap-1.5">
+              <i data-lucide="upload" class="w-3.5 h-3.5"></i>Import JSON
+              <input id="kb-json-import" type="file" accept=".json" class="hidden">
+            </label>
+          </div>
+        </div>
+
+        <div class="war-card p-3.5 grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+          <div>
+            <label class="text-cinder block mb-1 font-semibold">Opponent Search</label>
+            <input id="kb-search" type="text" placeholder="Search for opponent..." class="war-input w-full">
+          </div>
+          <div>
+            <label class="text-cinder block mb-1 font-semibold">Battle Size</label>
+            <select id="kb-size" class="war-input w-full">
+              <option value="all">Any Fight Size</option>
+              <option value="1v1">1v1</option>
+              <option value="2v2">2v2</option>
+              <option value="5v5">5v5</option>
+              <option value="zvz">ZvZ (10+)</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-cinder block mb-1 font-semibold">Weapon</label>
+            <div class="relative">
+              <input id="kb-weapon" type="text" placeholder="Any" class="war-input w-full pr-14">
+              <button id="kb-weapon-clear" type="button" class="hidden absolute right-2 top-1/2 -translate-y-1/2 text-[11px] text-ember-400 hover:underline">&times; Clear</button>
+            </div>
+          </div>
+        </div>
+
+        <div id="kb-status-bar" class="text-xs font-mono text-cinder bg-iron border border-rim rounded-lg px-3 py-2">Ready — click Refresh now to load recent PvP kills for the selected server.</div>
+        <div id="kb-feed" class="space-y-3"></div>
+
+        <!-- FULL EVENT DETAIL MODAL -->
+        <div id="kb-event-modal" class="hidden fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
+          <div class="war-card p-5 max-w-3xl w-full max-h-[85vh] overflow-y-auto space-y-4">
+            <div class="flex items-center justify-between border-b border-rim pb-3">
+              <div>
+                <h3 class="font-display text-xl font-bold text-bone" id="kb-modal-title">Kill Event</h3>
+                <div id="kb-modal-time" class="text-xs font-mono text-cinder"></div>
+              </div>
+              <button id="kb-modal-close" type="button" class="btn-ghost p-1"><i data-lucide="x" class="w-4 h-4"></i></button>
+            </div>
+            <div id="kb-modal-body" class="space-y-4 text-xs"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 4. BUILDS DIRECTORY & CREATOR (STARTS BLANK) -->
+      <section id="view-builds" class="view-panel space-y-5">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h1 class="font-display text-2xl font-bold">Meta Builds &amp; Gear Planner</h1>
+            <p class="text-xs text-cinder">Auto-extracted from live Albion Online API kills + community loadouts. Refreshes every 15s.</p>
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <button id="fetch-community-builds-btn" type="button" class="btn-amber flex items-center gap-1.5"><i data-lucide="globe" class="w-4 h-4"></i>Sync API &amp; Community Builds</button>
+            <button id="open-build-modal" type="button" class="btn-primary flex items-center gap-1.5"><i data-lucide="plus" class="w-4 h-4"></i>Create Build</button>
+          </div>
+        </div>
+        <div class="flex flex-wrap gap-2 items-center">
+          <input id="build-search" type="text" placeholder="Search weapon or build name..." class="war-input w-56">
+          <button type="button" data-bfilter="all" class="chip active bfilter-chip">All</button>
+          <button type="button" data-bfilter="ZvZ" class="chip bfilter-chip">ZvZ</button>
+          <button type="button" data-bfilter="Mists Solo" class="chip bfilter-chip">Mists Solo</button>
+          <button type="button" data-bfilter="Small Scale" class="chip bfilter-chip">Small Scale</button>
+          <button type="button" data-bfilter="Avalon PvE" class="chip bfilter-chip">Avalon PvE</button>
+          <button type="button" data-bfilter="Ganking" class="chip bfilter-chip">Ganking</button>
+        </div>
+        <div id="builds-grid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4"></div>
+
+        <!-- CREATE BUILD MODAL -->
+        <div id="build-modal" class="hidden fixed inset-0 z-50 bg-black/75 flex items-center justify-center p-4">
+          <div class="war-card p-5 max-w-lg w-full space-y-3">
+            <div class="flex items-center justify-between">
+              <h3 class="font-display text-xl font-bold">Create Custom Build</h3>
+              <button id="close-build-modal" type="button" class="btn-ghost p-1"><i data-lucide="x" class="w-4 h-4"></i></button>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <input id="nb-title" type="text" placeholder="Build title (e.g. ZvZ Realmbreaker)" class="war-input sm:col-span-2">
+              <select id="nb-mode" class="war-input">
+                <option value="ZvZ">ZvZ</option>
+                <option value="Mists Solo">Mists Solo</option>
+                <option value="Small Scale">Small Scale</option>
+                <option value="Avalon PvE">Avalon PvE</option>
+                <option value="Ganking">Ganking</option>
+              </select>
+              <select id="nb-role" class="war-input">
+                <option value="Melee DPS">Melee DPS</option>
+                <option value="Ranged DPS">Ranged DPS</option>
+                <option value="Tank">Tank</option>
+                <option value="Healer">Healer</option>
+                <option value="Support">Support</option>
+              </select>
+              <input id="nb-weapon" type="text" placeholder="Main Hand ID (e.g. T8_2H_AXE_AVALON)" class="war-input">
+              <input id="nb-head" type="text" placeholder="Head ID (e.g. T8_HEAD_PLATE_SET3)" class="war-input">
+              <input id="nb-armor" type="text" placeholder="Armor ID (e.g. T8_ARMOR_LEATHER_HELL)" class="war-input">
+              <input id="nb-shoes" type="text" placeholder="Shoes ID (e.g. T8_SHOES_CLOTH_SET2)" class="war-input">
+              <input id="nb-cape" type="text" placeholder="Cape ID (e.g. T8_CAPEITEM_FW_MARTLOCK)" class="war-input">
+              <input id="nb-food" type="text" placeholder="Food ID (e.g. T7_MEAL_OMELETTE)" class="war-input">
+            </div>
+            <textarea id="nb-notes" rows="2" placeholder="Rotation &amp; playstyle notes..." class="war-input w-full"></textarea>
+            <div class="flex justify-end gap-2">
+              <button id="cancel-build-modal" type="button" class="btn-ghost">Cancel</button>
+              <button id="save-build-btn" type="button" class="btn-primary">Save Build</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 5. PLAYERS & GUILDS EXPLORE (STARTS BLANK) -->
+      <section id="view-explore" class="view-panel space-y-5">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h1 class="font-display text-2xl font-bold">Players &amp; Guilds Directory — <span id="exp-server-heading" class="text-ember-400">Americas (NA)</span></h1>
+            <p class="text-xs text-cinder">Search any player or guild on the selected server.</p>
+          </div>
+          <div class="flex gap-2">
+            <input id="explore-query" type="text" placeholder="Search player or guild..." class="war-input w-64">
+            <button id="explore-search-btn" type="button" class="btn-primary">Search</button>
+          </div>
+        </div>
+        <div id="explore-search-results" class="war-card p-6 text-center text-xs text-cinder">Enter a player or guild name above to query live profiles for the selected server.</div>
+      </section>
+
+      <!-- 6. RANKINGS (STARTS BLANK) -->
+      <section id="view-rankings" class="view-panel space-y-5">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h1 class="font-display text-2xl font-bold">Outlands PvP &amp; ZvZ Rankings — <span id="rk-server-heading" class="text-ember-400">Americas (NA)</span></h1>
+            <p class="text-xs text-cinder">Server-specific PvP &amp; ZvZ ladders derived from live battles and kills.</p>
+          </div>
+          <div class="flex gap-2">
+            <input id="rank-pin-input" type="text" placeholder="Search &amp; pin player/guild..." class="war-input w-52">
+            <button id="rank-fetch-btn" type="button" class="btn-primary flex items-center gap-1.5"><i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>Load Live Rankings</button>
+          </div>
+        </div>
+        <div class="flex flex-wrap gap-2">
+          <button type="button" data-rtab="players" class="chip active rtab-btn">Players</button>
+          <button type="button" data-rtab="guilds" class="chip rtab-btn">Guilds</button>
+          <button type="button" data-rtab="alliances" class="chip rtab-btn">ZvZ Alliances</button>
+        </div>
+        <div id="rankings-content" class="grid grid-cols-1 lg:grid-cols-2 gap-4"></div>
+      </section>
+
+      <!-- 7. BANDIT ASSAULT TRACKER (HH:MM:SS) -->
+      <section id="view-bandit" class="view-panel space-y-5">
+        <div>
+          <h1 class="font-display text-2xl font-bold">Bandit Assault Red Zone Tracker</h1>
+          <p class="text-xs text-cinder">Live <span class="font-mono text-ember-400">hh:mm:ss</span> countdowns, trigger probability windows, and UTC + local timezone schedules across NA, EU, and AS.</p>
+        </div>
+        <div id="bandit-cards" class="grid grid-cols-1 md:grid-cols-3 gap-4"></div>
+        <div class="war-card p-5">
+          <h2 class="font-display text-lg font-bold mb-3">Upcoming 24h Bandit Roll Windows (UTC &amp; Your Local Time)</h2>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs font-mono tabular">
+              <thead class="text-cinder border-b border-rim">
+                <tr>
+                  <th class="py-2">Window #</th>
+                  <th class="py-2">UTC Time</th>
+                  <th class="py-2">Local Time</th>
+                  <th class="py-2">Est. Trigger %</th>
+                  <th class="py-2">Status</th>
+                </tr>
+              </thead>
+              <tbody id="bandit-schedule-body" class="divide-y divide-rim/50"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- 8. UNIFIED LOOT SPLIT & CSV LOOT LOGGER (STARTS BLANK) -->
+      <section id="view-lootsplit" class="view-panel space-y-5">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h1 class="font-display text-2xl font-bold">Loot Split Calculator &amp; CSV Loot Logger</h1>
+            <p class="text-xs text-cinder">Import an Albion Loot Logger CSV to audit player drops and push totals into the party silver split calculator.</p>
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <label class="btn-primary cursor-pointer flex items-center gap-1.5">
+              <i data-lucide="upload" class="w-3.5 h-3.5"></i>Import Loot CSV
+              <input id="loot-csv-file" type="file" accept=".csv,.txt" class="hidden">
+            </label>
+            <button id="loot-send-to-split" type="button" class="btn-amber">Push CSV Total &rarr; Split</button>
+            <button id="loot-clear-btn" type="button" class="btn-ghost">Reset</button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+          <div class="lg:col-span-5 war-card p-5 space-y-3">
+            <h2 class="font-display text-lg font-bold text-ember-400">Party Loot Split Calculator</h2>
+            <div class="grid grid-cols-2 gap-2.5 text-xs">
+              <div class="col-span-2">
+                <label class="text-cinder block mb-1">Loot Split Name</label>
+                <input id="ls-name" type="text" placeholder="Enter raid or event name..." class="war-input w-full">
+              </div>
+              <div>
+                <label class="text-cinder block mb-1">Poster / Caller</label>
+                <input id="ls-poster" type="text" placeholder="Player name..." class="war-input w-full">
+              </div>
+              <div>
+                <label class="text-cinder block mb-1">Players to Split</label>
+                <input id="ls-players" type="number" min="1" placeholder="0" class="war-input w-full font-mono">
+              </div>
+              <div>
+                <label class="text-cinder block mb-1">Total Tab Est. (Silver)</label>
+                <input id="ls-tab" type="number" min="0" placeholder="0" class="war-input w-full font-mono">
+              </div>
+              <div>
+                <label class="text-cinder block mb-1">10k Silver Bags</label>
+                <input id="ls-bags" type="number" min="0" placeholder="0" class="war-input w-full font-mono">
+              </div>
+              <div>
+                <label class="text-cinder block mb-1">Repair Bills (Silver)</label>
+                <input id="ls-repairs" type="number" min="0" placeholder="0" class="war-input w-full font-mono">
+              </div>
+              <div>
+                <label class="text-cinder block mb-1">Guild Tax (%)</label>
+                <input id="ls-guild-tax" type="number" min="0" max="50" placeholder="0" class="war-input w-full font-mono">
+              </div>
+              <div class="col-span-2">
+                <label class="text-cinder block mb-1">Buyer Discount / Fee (%)</label>
+                <input id="ls-buyer-tax" type="number" min="0" max="40" placeholder="0" class="war-input w-full font-mono">
+              </div>
+            </div>
+
+            <div id="ls-receipt" class="war-card-elev p-4 space-y-2 text-xs font-mono tabular"></div>
+            <div class="flex gap-2">
+              <button id="ls-copy-btn" type="button" class="btn-primary flex-1">Copy Receipt</button>
+              <button id="ls-download-btn" type="button" class="btn-ghost flex-1">Download PNG</button>
+            </div>
+          </div>
+
+          <div class="lg:col-span-7 war-card p-5 space-y-3">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <h2 class="font-display text-lg font-bold">CSV Loot Log Viewer</h2>
+              <div class="flex gap-2">
+                <input id="loot-filter-input" type="text" placeholder="Filter player, guild, item..." class="war-input w-48">
+                <span id="loot-total-badge" class="badge-live flex items-center font-mono">0s</span>
+              </div>
+            </div>
+            <div class="overflow-x-auto max-h-[440px] overflow-y-auto">
+              <table class="w-full text-left text-xs">
+                <thead class="text-cinder border-b border-rim sticky top-0 bg-iron">
+                  <tr>
+                    <th class="py-2 pr-2">Item</th>
+                    <th class="py-2 pr-2">Looted By</th>
+                    <th class="py-2 pr-2">From</th>
+                    <th class="py-2 pr-2 text-right">Qty</th>
+                    <th class="py-2 text-right">Est. Value</th>
+                  </tr>
+                </thead>
+                <tbody id="loot-table-body" class="divide-y divide-rim/50"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 9. AVALON MAPS (STARTS BLANK UNTIL SEARCH/FILTER) -->
+      <section id="view-avalon" class="view-panel space-y-5">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h1 class="font-display text-2xl font-bold">Roads of Avalon Zone Explorer</h1>
+            <p class="text-xs text-cinder">Search by zone name or apply a tier/layout filter to explore Roads of Avalon regions.</p>
+          </div>
+          <span id="ava-count" class="badge-new font-mono">0 zones shown</span>
+        </div>
+        <div class="war-card p-4 flex flex-wrap gap-2.5 items-center">
+          <input id="ava-search" type="text" placeholder="Search Avalon zone or resource..." class="war-input w-56">
+          <select id="ava-tier" class="war-input">
+            <option value="">Select Tier...</option>
+            <option value="all">All Tiers</option>
+            <option value="4">T4</option>
+            <option value="6">T6</option>
+            <option value="8">T8</option>
+          </select>
+          <select id="ava-layout" class="war-input">
+            <option value="">Select Layout...</option>
+            <option value="all">All Layouts</option>
+            <option value="C">Layout C</option>
+            <option value="F">Layout F</option>
+            <option value="H">Layout H</option>
+            <option value="O">Layout O</option>
+            <option value="P">Layout P</option>
+            <option value="S">Layout S</option>
+            <option value="T">Layout T</option>
+            <option value="X">Layout X</option>
+          </select>
+          <label class="flex items-center gap-1.5 text-xs text-bone cursor-pointer px-2">
+            <input id="ava-ho-only" type="checkbox" class="accent-crimson-600"> Hideout Only
+          </label>
+          <label class="flex items-center gap-1.5 text-xs text-ember-400 cursor-pointer px-2">
+            <input id="ava-gold-only" type="checkbox" class="accent-ember-500"> Has Gold Chest
+          </label>
+          <button id="ava-reset-btn" type="button" class="btn-ghost">Clear</button>
+        </div>
+        <div id="avalon-grid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4"></div>
+      </section>
+
+      <!-- 10. CRAFTING & REFINING PROFIT CALCULATOR (SEARCH BAR + BONUS CITY + DAILY BONUS NOTIFICATION, STARTS BLANK) -->
+      <section id="view-crafting" class="view-panel space-y-5">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h1 class="font-display text-2xl font-bold">Crafting &amp; Refining Profit Ledger</h1>
+            <p class="text-xs text-cinder">Search any gear, refining, or food recipe to see its bonus crafting city, RRR profit breakdown, and live AODP prices.</p>
+          </div>
+          <div class="flex gap-2">
+            <button type="button" data-cmode="all" class="chip active cmode-btn">All</button>
+            <button type="button" data-cmode="craft" class="chip cmode-btn">Gear &amp; Weapons</button>
+            <button type="button" data-cmode="refine" class="chip cmode-btn">Refining</button>
+            <button type="button" data-cmode="food" class="chip cmode-btn">Food &amp; Meals</button>
+            <button type="button" data-cmode="enchant" class="chip cmode-btn">Enchanting</button>
+          </div>
+        </div>
+
+        <!-- DAILY PRODUCTION BONUS NOTIFICATION BANNER -->
+        <div id="daily-bonus-banner" class="war-card p-3.5 border-ember-500/50 bg-ember-500/10 flex flex-wrap items-center justify-between gap-3 text-xs">
+          <div class="flex items-center gap-2.5">
+            <span class="w-8 h-8 rounded-lg bg-ember-500/20 border border-ember-500/50 flex items-center justify-center shrink-0">
+              <i data-lucide="bell-ring" class="w-4 h-4 text-ember-400"></i>
+            </span>
+            <div>
+              <div class="font-bold text-ember-400 uppercase tracking-wide">Daily Production Bonus Active Today</div>
+              <div id="cr-daily-bonus-desc" class="text-bone mt-0.5"></div>
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <label class="flex items-center gap-1.5 cursor-pointer text-ember-400 font-semibold">
+              <input id="cr-apply-daily" type="checkbox" class="accent-ember-500"> Apply +10% Daily Bonus
+            </label>
+            <button id="dismiss-daily-banner" type="button" class="btn-ghost p-1" aria-label="Dismiss notification"><i data-lucide="x" class="w-3.5 h-3.5"></i></button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 xl:grid-cols-12 gap-5">
+          <div class="xl:col-span-5 war-card p-5 space-y-3">
+            <!-- RECIPE SEARCH BAR -->
+            <div class="relative">
+              <label class="text-xs text-cinder block mb-1">Search Recipe</label>
+              <div class="relative">
+                <input id="cr-recipe-search" type="text" autocomplete="off" placeholder="Search recipe (e.g. Broadsword, Metal Bar, Pork Omelette)..." class="war-input w-full pr-8">
+                <button id="cr-clear-recipe" type="button" class="hidden absolute right-2 top-1/2 -translate-y-1/2 text-cinder hover:text-bone"><i data-lucide="x" class="w-3.5 h-3.5"></i></button>
+              </div>
+              <div id="cr-recipe-dropdown" class="search-dropdown hidden"></div>
+            </div>
+
+            <!-- BONUS CRAFTING CITY CALLOUT -->
+            <div id="cr-bonus-city-card" class="hidden war-card-elev p-3 border-ember-500/40 flex items-center justify-between gap-2 text-xs">
+              <div>
+                <div class="text-cinder">Bonus Crafting City</div>
+                <div class="font-display text-base font-bold text-ember-400" id="cr-bonus-city-name">—</div>
+              </div>
+              <button id="cr-use-bonus-city" type="button" class="btn-amber text-xs py-1.5 px-2.5">Use Bonus City</button>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3 text-xs">
+              <div>
+                <label class="text-cinder block mb-1">Tier</label>
+                <select id="cr-tier" class="war-input w-full">
+                  <option value="4">T4</option>
+                  <option value="5">T5</option>
+                  <option value="6">T6</option>
+                  <option value="7" selected>T7</option>
+                  <option value="8">T8</option>
+                </select>
+              </div>
+              <div>
+                <label class="text-cinder block mb-1">Enchantment</label>
+                <select id="cr-enchant" class="war-input w-full">
+                  <option value="0">.0 Flat</option>
+                  <option value="1">.1</option>
+                  <option value="2">.2</option>
+                  <option value="3">.3</option>
+                  <option value="4">.4 Pristine</option>
+                </select>
+              </div>
+              <div>
+                <label class="text-cinder block mb-1">Craft City</label>
+                <select id="cr-craft-city" class="war-input w-full"></select>
+              </div>
+              <div>
+                <label class="text-cinder block mb-1">Sell City</label>
+                <select id="cr-sell-city" class="war-input w-full"></select>
+              </div>
+              <div>
+                <label class="text-cinder block mb-1">Quantity (Crafts)</label>
+                <input id="cr-qty" type="number" min="1" value="1" class="war-input w-full font-mono">
+              </div>
+              <div>
+                <label class="text-cinder block mb-1">Station Fee / 100 Nut.</label>
+                <input id="cr-fee" type="number" min="0" value="450" class="war-input w-full font-mono">
+              </div>
+              <div class="col-span-2 flex flex-wrap gap-4 pt-1">
+                <label class="flex items-center gap-1.5 cursor-pointer text-bone">
+                  <input id="cr-focus" type="checkbox" class="accent-ember-500"> Use Focus (+RRR)
+                </label>
+                <label class="flex items-center gap-1.5 cursor-pointer text-bone">
+                  <input id="cr-premium" type="checkbox" checked class="accent-crimson-600"> Premium Tax (6.5%)
+                </label>
+              </div>
+            </div>
+
+            <div class="pt-2 border-t border-rim space-y-2">
+              <div class="flex items-center justify-between text-xs">
+                <span class="font-semibold text-cinder uppercase">Materials &amp; Owned Deduction</span>
+                <button id="cr-sync-aodp" type="button" class="text-ember-400 hover:underline font-semibold">Sync Live AODP</button>
+              </div>
+              <div id="cr-mats-list" class="space-y-2"></div>
+            </div>
+
+            <button id="cr-add-queue" type="button" class="btn-amber w-full">+ Add to Batch Queue</button>
+          </div>
+
+          <div class="xl:col-span-7 space-y-4">
+            <div id="cr-kpi-grid" class="grid grid-cols-2 sm:grid-cols-4 gap-3"></div>
+            <div class="war-card p-5">
+              <h3 class="font-display text-lg font-bold mb-2">Per-City Sell Profit Comparison</h3>
+              <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs font-mono tabular">
+                  <thead class="text-cinder border-b border-rim">
+                    <tr>
+                      <th class="py-2">Sell City</th>
+                      <th class="py-2 text-right">Sell Price</th>
+                      <th class="py-2 text-right">Net Revenue</th>
+                      <th class="py-2 text-right">Net Profit</th>
+                      <th class="py-2 text-right">Margin</th>
+                    </tr>
+                  </thead>
+                  <tbody id="cr-city-table" class="divide-y divide-rim/50"></tbody>
+                </table>
+              </div>
+            </div>
+            <div class="war-card p-5">
+              <div class="flex items-center justify-between mb-2">
+                <h3 class="font-display text-lg font-bold">Multi-Craft Batch Queue</h3>
+                <button id="cr-clear-queue" type="button" class="text-xs text-cinder hover:text-crimson-500">Clear Queue</button>
+              </div>
+              <div id="cr-queue-list" class="space-y-2 text-xs"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 11. MARKET & ALERTS (BLANK SEARCH BAR, STARTS BLANK) -->
+      <section id="view-trends" class="view-panel space-y-5">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h1 class="font-display text-2xl font-bold">Market Trends &amp; Price Alerts</h1>
+            <p class="text-xs text-cinder">Search any Albion item name or item ID to inspect 14-day city price curves and set silver threshold alerts.</p>
+          </div>
+          <div class="flex flex-wrap gap-2 items-center">
+            <div class="relative">
+              <input id="tr-item-search" type="text" autocomplete="off" placeholder="Search item name or ID (e.g. T7_MEAL_OMELETTE)..." class="war-input w-64 pr-7">
+              <button id="tr-clear-item" type="button" class="hidden absolute right-2 top-1/2 -translate-y-1/2 text-cinder hover:text-bone"><i data-lucide="x" class="w-3.5 h-3.5"></i></button>
+              <div id="tr-item-dropdown" class="search-dropdown hidden"></div>
+            </div>
+            <select id="tr-city" class="war-input"></select>
+            <button id="tr-fetch-btn" type="button" class="btn-primary">Load History</button>
+          </div>
+        </div>
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+          <div class="lg:col-span-8 war-card p-5">
+            <div class="flex items-center justify-between mb-3">
+              <h2 id="tr-chart-title" class="font-display text-lg font-bold">Search an item to view price history</h2>
+              <span id="tr-source-badge" class="badge-new">BLANK</span>
+            </div>
+            <div id="tr-empty-state" class="h-64 flex items-center justify-center text-xs text-cinder text-center px-4">
+              Enter an item name or Albion item ID in the search bar above and click Load History.
+            </div>
+            <div id="tr-chart-wrap" class="relative h-64 hidden">
+              <canvas id="trends-chart"></canvas>
+            </div>
+          </div>
+          <div class="lg:col-span-4 war-card p-5 space-y-4">
+            <div class="space-y-2.5 pb-3 border-b border-rim">
+              <div class="flex items-center justify-between">
+                <h2 class="font-display text-lg font-bold text-jade">Profit Scanner (Flips)</h2>
+                <button id="scan-flips-btn" type="button" class="btn-amber text-xs py-1 px-2.5">Scan Flips</button>
+              </div>
+              <div class="grid grid-cols-2 gap-2 text-xs">
+                <select id="flip-buy-city" class="war-input"><option value="all">Buy: Any Royal</option><option value="Lymhurst">Lymhurst</option><option value="Martlock">Martlock</option><option value="Bridgewatch">Bridgewatch</option><option value="Fort Sterling">Fort Sterling</option><option value="Thetford">Thetford</option></select>
+                <select id="flip-sell-city" class="war-input"><option value="all">Sell: Caerleon / BM</option><option value="Black Market">Black Market</option><option value="Caerleon">Caerleon</option></select>
+              </div>
+              <div id="market-flips-list" class="space-y-2 text-xs">
+                <div class="text-cinder">Click <strong>Scan Flips</strong> to compare Royal Cities vs. Black Market / Caerleon spreads.</div>
+              </div>
+            </div>
+            <div class="flex items-center justify-between">
+              <h2 class="font-display text-lg font-bold text-ember-400">Price Alerts</h2>
+              <button id="enable-notif-btn" type="button" class="btn-ghost text-[11px] py-1 px-2">Enable Alerts</button>
+            </div>
+            <div class="space-y-2 text-xs">
+              <input id="al-item-name" type="text" placeholder="Item ID (e.g. T8_BAG)" class="war-input w-full font-mono">
+              <div class="grid grid-cols-2 gap-2">
+                <select id="al-dir" class="war-input">
+                  <option value="below">Drops Below</option>
+                  <option value="above">Rises Above</option>
+                </select>
+                <input id="al-price" type="number" placeholder="Target Silver" class="war-input font-mono">
+              </div>
+              <button id="al-add-btn" type="button" class="btn-primary w-full">Add Alert</button>
+            </div>
+            <div id="alerts-list" class="space-y-2 text-xs pt-2 border-t border-rim"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 11B. ISLAND PLANNER (ONELIFEGAMING REFERENCE, STARTS BLANK) -->
+      <section id="view-island" class="view-panel space-y-5">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h1 class="font-display text-2xl font-bold">Island Farming Planner</h1>
+            <p class="text-xs text-cinder">Select a crop/herb, island level, and city bonus to calculate seeds needed, expected yield, and daily silver ROI.</p>
+          </div>
+          <button id="isl-reset-btn" type="button" class="btn-ghost">Reset</button>
+        </div>
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+          <div class="lg:col-span-5 war-card p-5 space-y-3 text-xs">
+            <div>
+              <label class="text-cinder block mb-1">Crop / Herb</label>
+              <select id="isl-crop" class="war-input w-full">
+                <option value="">Select Crop or Herb...</option>
+                <option value="T1_CARROT">Carrots (T1)</option>
+                <option value="T2_BEAN">Beans (T2)</option>
+                <option value="T3_WHEAT">Wheat (T3)</option>
+                <option value="T4_TURNIP">Turnips (T4)</option>
+                <option value="T5_CABBAGE">Cabbage (T5)</option>
+                <option value="T6_POTATO">Potatoes (T6)</option>
+                <option value="T7_CORN">Bundle of Corn (T7)</option>
+                <option value="T8_PUMPKIN">Pumpkin (T8)</option>
+              </select>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="text-cinder block mb-1">Island Level</label>
+                <select id="isl-level" class="war-input w-full">
+                  <option value="1">Level 1 (1 plot)</option>
+                  <option value="2">Level 2 (4 plots)</option>
+                  <option value="3">Level 3 (6 plots)</option>
+                  <option value="4">Level 4 (9 plots)</option>
+                  <option value="5">Level 5 (12 plots)</option>
+                  <option value="6" selected>Level 6 (16 plots)</option>
+                </select>
+              </div>
+              <div>
+                <label class="text-cinder block mb-1">Farm Plots Used</label>
+                <input id="isl-plots" type="number" min="1" max="16" value="16" class="war-input w-full font-mono">
+              </div>
+              <div class="col-span-2">
+                <label class="text-cinder block mb-1">Island City</label>
+                <select id="isl-city" class="war-input w-full">
+                  <option value="Caerleon">Caerleon (+10% Farming)</option>
+                  <option value="Lymhurst">Lymhurst (Carrots/Cabbage)</option>
+                  <option value="Bridgewatch">Bridgewatch (Beans/Corn)</option>
+                  <option value="Martlock">Martlock (Wheat/Potatoes)</option>
+                  <option value="Thetford">Thetford (Turnips/Pumpkins)</option>
+                  <option value="Fort Sterling">Fort Sterling</option>
+                  <option value="Brecilien">Brecilien</option>
+                </select>
+              </div>
+            </div>
+            <div class="flex flex-wrap gap-4 pt-1">
+              <label class="flex items-center gap-1.5 cursor-pointer text-bone"><input id="isl-premium" type="checkbox" checked class="accent-crimson-600"> Premium (2x Yield)</label>
+              <label class="flex items-center gap-1.5 cursor-pointer text-bone"><input id="isl-focus" type="checkbox" class="accent-ember-500"> Use Focus (+Seed Return)</label>
+            </div>
+          </div>
+          <div id="isl-results" class="lg:col-span-7 war-card p-5 flex items-center justify-center text-xs text-cinder">
+            Select a Crop or Herb on the left to calculate seed return and harvest yields.
+          </div>
+        </div>
+      </section>
+
+      <!-- 12. GOLD & PREMIUM PRICE (STARTS BLANK UNTIL SYNCED) -->
+      <section id="view-gold" class="view-panel space-y-5">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h1 class="font-display text-2xl font-bold">Gold Exchange &amp; Premium Cost — <span id="gold-server-heading" class="text-ember-400">Americas (NA)</span></h1>
+            <p class="text-xs text-cinder">Sync live Gold-to-Silver exchange rates for the selected server to calculate 1-, 3-, 6-, and 12-month Premium costs.</p>
+          </div>
+          <div class="flex gap-2">
+            <button type="button" data-gtf="24H" class="chip active gtf-btn">24H</button>
+            <button type="button" data-gtf="7D" class="chip gtf-btn">7D</button>
+            <button type="button" data-gtf="30D" class="chip gtf-btn">30D</button>
+            <button id="gold-sync-btn" type="button" class="btn-primary flex items-center gap-1.5"><i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>Sync Live Gold</button>
+          </div>
+        </div>
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+          <div class="lg:col-span-7 war-card p-5">
+            <div class="flex items-center justify-between mb-3">
+              <div>
+                <div class="text-xs text-cinder">Current Gold Rate</div>
+                <div id="gold-big-price" class="font-mono text-3xl font-bold text-ember-400 tabular">—</div>
+              </div>
+              <span id="gold-delta-badge" class="badge-new">NOT SYNCED</span>
+            </div>
+            <div id="gold-empty-state" class="h-64 flex items-center justify-center text-xs text-cinder text-center">
+              Click "Sync Live Gold" above to fetch current Gold-to-Silver rates for this server.
+            </div>
+            <div id="gold-chart-wrap" class="relative h-64 hidden">
+              <canvas id="gold-chart"></canvas>
+            </div>
+          </div>
+          <div class="lg:col-span-5 war-card p-5 space-y-3">
+            <h2 class="font-display text-lg font-bold">Premium Subscription Breakdown</h2>
+            <div id="premium-cards" class="space-y-2.5"></div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <div id="toast-box" class="toast-box"></div>
+
+  <script>
+  (function () {
+    'use strict';
+
+    // ==================== 1. SAFE STORAGE & HELPERS ====================
+    const memStore = {};
+    const Store = {
+      get(k, fb = null) {
+        try { const v = localStorage.getItem(k); return v !== null ? JSON.parse(v) : (k in memStore ? memStore[k] : fb); }
+        catch { return k in memStore ? memStore[k] : fb; }
+      },
+      set(k, v) {
+        memStore[k] = v;
+        try { localStorage.setItem(k, JSON.stringify(v)); } catch {}
+      }
+    };
+
+    function toast(msg, type = 'info') {
+      const box = document.getElementById('toast-box');
+      if (!box) return;
+      const el = document.createElement('div');
+      const border = type === 'err' ? 'border-crimson-600' : type === 'ok' ? 'border-jade' : 'border-ember-500';
+      el.className = `bg-iron border ${border} text-bone text-xs px-3.5 py-2.5 rounded-lg shadow-xl`;
+      el.textContent = msg;
+      box.appendChild(el);
+      setTimeout(() => el.remove(), 3500);
+    }
+
+    function esc(s) {
+      return String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    }
+
+    function fmt(n) {
+      const num = Number(n || 0);
+      if (Math.abs(num) >= 1e9) return (num / 1e9).toFixed(2) + 'B';
+      if (Math.abs(num) >= 1e6) return (num / 1e6).toFixed(2) + 'M';
+      return Math.round(num).toLocaleString('en-US');
+    }
+
+    function copyText(text) {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(() => toast('Copied to clipboard!', 'ok')).catch(() => fallbackCopy(text));
+      } else fallbackCopy(text);
+    }
+    function fallbackCopy(text) {
+      const ta = document.createElement('textarea');
+      ta.value = text; document.body.appendChild(ta); ta.select();
+      try { document.execCommand('copy'); toast('Copied to clipboard!', 'ok'); } catch { toast('Copy failed', 'err'); }
+      ta.remove();
+    }
+
+    function formatHMS(totalSec) {
+      const sec = Math.max(0, Math.floor(totalSec));
+      const h = Math.floor(sec / 3600);
+      const m = Math.floor((sec % 3600) / 60);
+      const s = sec % 60;
+      return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+    }
+
+    // ==================== 2. HOISTED API HOSTS & RESILIENT CORS FETCH ====================
+    const AODP_HOSTS = {
+      west: 'https://west.albion-online-data.com',
+      europe: 'https://europe.albion-online-data.com',
+      east: 'https://east.albion-online-data.com'
+    };
+    const GAMEINFO_HOSTS = {
+      west: 'https://gameinfo.albiononline.com/api/gameinfo',
+      europe: 'https://gameinfo-ams.albiononline.com/api/gameinfo',
+      east: 'https://gameinfo-sgp.albiononline.com/api/gameinfo'
+    };
+    const ALBIONBB_HOSTS = {
+      west: 'https://api.albionbb.com/us',
+      europe: 'https://api.albionbb.com/eu',
+      east: 'https://api.albionbb.com/east'
+    };
+    const PUBLIC_PROXIES = [
+      u => `https://corsproxy.io/?${encodeURIComponent(u)}`,
+      u => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(u)}`,
+      u => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
+      u => `https://api.cors.lol/?url=${encodeURIComponent(u)}`
+    ];
+
+    function itemIconUrl(id, quality = 1, enchant = '') {
+      let clean = String(id || '').trim();
+      if (!clean) return '';
+      if (enchant !== '' && Number(enchant) > 0 && !/@[0-4]$/.test(clean)) {
+        clean += '@' + String(enchant).replace(/[^0-4]/g, '').slice(0, 1);
+      }
+      const safe = encodeURIComponent(clean).replace(/%40/gi, '@');
+      const q = Math.min(5, Math.max(1, Number(quality) || 1));
+      return `https://render.albiononline.com/v1/item/${safe}.png?quality=${q}&size=64`;
+    }
+
+    function imgTag(id, quality = 1, enchant = '', cls = 'w-9 h-9 object-contain') {
+      const src = itemIconUrl(id, quality, enchant);
+      const tier = (String(id || '').match(/^T(\d+)/) || [])[1] || '8';
+      return `<img src="${src}" alt="" class="${cls}" loading="lazy" onerror="this.style.display='none';if(this.nextElementSibling)this.nextElementSibling.style.display='flex'"><span style="display:none" class="${cls} items-center justify-center text-[11px] font-mono font-bold text-ember-400">T${tier}</span>`;
+    }
+
+    async function fetchWithTimeout(url, ms = 8500) {
+      const ctrl = new AbortController();
+      const t = setTimeout(() => ctrl.abort(), ms);
+      try {
+        const res = await fetch(url, { signal: ctrl.signal });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const text = await res.text();
+        try {
+          return JSON.parse(text);
+        } catch {
+          throw new Error('Upstream returned non-JSON response');
+        }
+      } finally {
+        clearTimeout(t);
+      }
+    }
+
+    async function fetchGameinfoResilient(path, srv = state.server) {
+      const target = `${GAMEINFO_HOSTS[srv]}${path}`;
+      const custom = Store.get('wh_custom_proxy', '');
+      const urls = [
+        ...(custom ? [custom + encodeURIComponent(target)] : []),
+        ...PUBLIC_PROXIES.map(fn => fn(target)),
+        target
+      ];
+      try {
+        return await Promise.any(urls.map(u => fetchWithTimeout(u, 9000)));
+      } catch (agg) {
+        const firstErr = agg?.errors?.[0]?.message || 'All Gameinfo routes blocked or timed out';
+        throw new Error(firstErr);
+      }
+    }
+
+    // ==================== 3. STATIC CATALOGS (REFERENCE ONLY — VIEWS START BLANK) ====================
+    const CITIES = ['Bridgewatch', 'Fort Sterling', 'Lymhurst', 'Martlock', 'Thetford', 'Caerleon', 'Brecilien'];
+    const SELL_CITIES = [...CITIES, 'Black Market'];
+    const REGION_LABELS = { west: 'Americas (NA)', europe: 'Europe (EU)', east: 'Asia (AS)' };
+    const REGION_SHORT = { west: 'NA', europe: 'EU', east: 'AS' };
+
+    const DAILY_BONUS_ROTATION = [
+      { category: 'Swords & Leather Refining', bonus: '+10% Crafting & Refining Bonus', cities: 'Lymhurst / Martlock' },
+      { category: 'Axes & Metal Bar Refining', bonus: '+10% Crafting & Refining Bonus', cities: 'Martlock / Thetford' },
+      { category: 'Food & Potions', bonus: '+10% Consumable Production Bonus', cities: 'Caerleon / Brecilien' },
+      { category: 'Bows & Cloth Refining', bonus: '+10% Crafting & Refining Bonus', cities: 'Lymhurst' },
+      { category: 'Plate Armor & Planks Refining', bonus: '+10% Crafting & Refining Bonus', cities: 'Bridgewatch / Fort Sterling' },
+      { category: 'Fire & Frost Staves', bonus: '+10% Weapon Crafting Bonus', cities: 'Thetford / Martlock' },
+      { category: 'Bags, Capes & Stone Refining', bonus: '+10% Accessory & Stone Bonus', cities: 'Brecilien / Bridgewatch' }
+    ];
+
+    function getTodaysDailyBonus() {
+      const dayIdx = Math.floor(Date.now() / 86400000) % DAILY_BONUS_ROTATION.length;
+      return DAILY_BONUS_ROTATION[dayIdx];
+    }
+
+    const ALL_RECIPES = [
+      { key: 'BAG', mode: 'craft', name: 'Bag', idSuffix: 'BAG', bonusCity: 'Brecilien', bonusDesc: '+15% Bag Crafting', baseItemValue: 256, outputQty: 1, mats: [{ type: 'CLOTH', label: 'Cloth', qty: 8 }, { type: 'LEATHER', label: 'Leather', qty: 8 }] },
+      { key: 'MAIN_SWORD', mode: 'craft', name: 'Broadsword', idSuffix: 'MAIN_SWORD', bonusCity: 'Lymhurst', bonusDesc: '+15% Sword Crafting', baseItemValue: 384, outputQty: 1, mats: [{ type: 'METALBAR', label: 'Metal Bar', qty: 16 }, { type: 'LEATHER', label: 'Leather', qty: 8 }] },
+      { key: '2H_AXE', mode: 'craft', name: 'Greataxe', idSuffix: '2H_AXE', bonusCity: 'Martlock', bonusDesc: '+15% Axe Crafting', baseItemValue: 512, outputQty: 1, mats: [{ type: 'METALBAR', label: 'Metal Bar', qty: 20 }, { type: 'PLANKS', label: 'Planks', qty: 12 }] },
+      { key: 'MAIN_FIRESTAFF', mode: 'craft', name: 'Fire Staff', idSuffix: 'MAIN_FIRESTAFF', bonusCity: 'Thetford', bonusDesc: '+15% Fire Staff Crafting', baseItemValue: 384, outputQty: 1, mats: [{ type: 'PLANKS', label: 'Planks', qty: 16 }, { type: 'METALBAR', label: 'Metal Bar', qty: 8 }] },
+      { key: 'ARMOR_PLATE_SET1', mode: 'craft', name: 'Soldier Armor', idSuffix: 'ARMOR_PLATE_SET1', bonusCity: 'Bridgewatch', bonusDesc: '+15% Plate Armor Crafting', baseItemValue: 256, outputQty: 1, mats: [{ type: 'METALBAR', label: 'Metal Bar', qty: 16 }] },
+      { key: 'ARMOR_LEATHER_SET1', mode: 'craft', name: 'Mercenary Jacket', idSuffix: 'ARMOR_LEATHER_SET1', bonusCity: 'Thetford', bonusDesc: '+15% Leather Armor Crafting', baseItemValue: 256, outputQty: 1, mats: [{ type: 'LEATHER', label: 'Leather', qty: 16 }] },
+      { key: 'HEAD_CLOTH_SET1', mode: 'craft', name: 'Scholar Cowl', idSuffix: 'HEAD_CLOTH_SET1', bonusCity: 'Thetford', bonusDesc: '+15% Cloth Helmet Crafting', baseItemValue: 128, outputQty: 1, mats: [{ type: 'CLOTH', label: 'Cloth', qty: 8 }] },
+      { key: 'SHOES_PLATE_SET1', mode: 'craft', name: 'Soldier Boots', idSuffix: 'SHOES_PLATE_SET1', bonusCity: 'Martlock', bonusDesc: '+15% Plate Boots Crafting', baseItemValue: 128, outputQty: 1, mats: [{ type: 'METALBAR', label: 'Metal Bar', qty: 8 }] },
+      { key: '2H_BOW', mode: 'craft', name: 'Bow', idSuffix: '2H_BOW', bonusCity: 'Lymhurst', bonusDesc: '+15% Bow Crafting', baseItemValue: 512, outputQty: 1, mats: [{ type: 'PLANKS', label: 'Planks', qty: 32 }] },
+      { key: '2H_CROSSBOW', mode: 'craft', name: 'Crossbow', idSuffix: '2H_CROSSBOW', bonusCity: 'Bridgewatch', bonusDesc: '+15% Crossbow Crafting', baseItemValue: 512, outputQty: 1, mats: [{ type: 'PLANKS', label: 'Planks', qty: 20 }, { type: 'METALBAR', label: 'Metal Bar', qty: 12 }] },
+      { key: 'METALBAR', mode: 'refine', name: 'Metal Bar', idSuffix: 'METALBAR', bonusCity: 'Thetford', bonusDesc: '+40% Ore Refining', baseItemValue: 16, outputQty: 1, mats: [{ type: 'ORE', label: 'Raw Ore', qty: 5 }, { type: 'PREV_METALBAR', label: 'Prev-Tier Bar', qty: 1 }] },
+      { key: 'CLOTH', mode: 'refine', name: 'Cloth', idSuffix: 'CLOTH', bonusCity: 'Lymhurst', bonusDesc: '+40% Fiber Refining', baseItemValue: 16, outputQty: 1, mats: [{ type: 'FIBER', label: 'Raw Fiber', qty: 5 }, { type: 'PREV_CLOTH', label: 'Prev-Tier Cloth', qty: 1 }] },
+      { key: 'LEATHER', mode: 'refine', name: 'Leather', idSuffix: 'LEATHER', bonusCity: 'Martlock', bonusDesc: '+40% Hide Refining', baseItemValue: 16, outputQty: 1, mats: [{ type: 'HIDE', label: 'Raw Hide', qty: 5 }, { type: 'PREV_LEATHER', label: 'Prev-Tier Leather', qty: 1 }] },
+      { key: 'PLANKS', mode: 'refine', name: 'Planks', idSuffix: 'PLANKS', bonusCity: 'Fort Sterling', bonusDesc: '+40% Wood Refining', baseItemValue: 16, outputQty: 1, mats: [{ type: 'WOOD', label: 'Raw Wood', qty: 5 }, { type: 'PREV_PLANKS', label: 'Prev-Tier Planks', qty: 1 }] },
+      { key: 'MEAL_OMELETTE', mode: 'food', name: 'Pork Omelette (T7)', fixedId: 'T7_MEAL_OMELETTE', fixedTier: 7, bonusCity: 'Caerleon', bonusDesc: '+15% Food Crafting', baseItemValue: 1280, outputQty: 10, mats: [{ itemId: 'T7_MEAT', label: 'Raw Pork', qty: 72 }, { itemId: 'T7_CORN', label: 'Bundle of Corn', qty: 36 }, { itemId: 'T5_EGG', label: 'Goose Eggs', qty: 18 }] },
+      { key: 'MEAL_STEW', mode: 'food', name: 'Beef Stew (T8)', fixedId: 'T8_MEAL_STEW', fixedTier: 8, bonusCity: 'Caerleon', bonusDesc: '+15% Food Crafting', baseItemValue: 1600, outputQty: 10, mats: [{ itemId: 'T8_MEAT', label: 'Raw Beef', qty: 72 }, { itemId: 'T8_PUMPKIN', label: 'Pumpkin', qty: 36 }, { itemId: 'T4_BREAD', label: 'Bread', qty: 36 }] },
+      { key: 'MEAL_SANDWICH', mode: 'food', name: 'Mutton Sandwich (T6)', fixedId: 'T6_MEAL_SANDWICH', fixedTier: 6, bonusCity: 'Caerleon', bonusDesc: '+15% Food Crafting', baseItemValue: 960, outputQty: 10, mats: [{ itemId: 'T6_MEAT', label: 'Raw Mutton', qty: 24 }, { itemId: 'T4_BREAD', label: 'Bread', qty: 12 }, { itemId: 'T6_BUTTER', label: "Sheep's Butter", qty: 6 }] },
+      { key: 'ENCHANT_RUNE_2H', mode: 'enchant', name: 'Enchant 2H Weapon (.0 -> .1 Runes)', fixedId: 'T8_2H_AXE@1', fixedTier: 8, bonusCity: 'Caerleon', bonusDesc: 'Artifact Foundry Upgrade', baseItemValue: 512, outputQty: 1, mats: [{ itemId: 'T8_2H_AXE', label: 'Base .0 Weapon', qty: 1 }, { itemId: 'T8_RUNE', label: "Elder's Rune", qty: 384 }] },
+      { key: 'ENCHANT_SOUL_2H', mode: 'enchant', name: 'Enchant 2H Weapon (.1 -> .2 Souls)', fixedId: 'T8_2H_AXE@2', fixedTier: 8, bonusCity: 'Caerleon', bonusDesc: 'Artifact Foundry Upgrade', baseItemValue: 512, outputQty: 1, mats: [{ itemId: 'T8_2H_AXE@1', label: 'Base .1 Weapon', qty: 1 }, { itemId: 'T8_SOUL', label: "Elder's Soul", qty: 384 }] }
+    ];
+
+    const MARKET_ITEM_CATALOG = [
+      { id: 'T7_MEAL_OMELETTE', name: 'Pork Omelette (T7)' },
+      { id: 'T8_MEAL_STEW', name: 'Beef Stew (T8)' },
+      { id: 'T6_MEAL_SANDWICH', name: 'Mutton Sandwich (T6)' },
+      { id: 'T8_BAG', name: "Elder's Bag (T8)" },
+      { id: 'T7_BAG', name: "Grandmaster's Bag (T7)" },
+      { id: 'T8_METALBAR', name: 'Adamantium Steel Bar (T8)' },
+      { id: 'T7_METALBAR', name: 'Meteorite Steel Bar (T7)' },
+      { id: 'T8_CLOTH', name: 'Opulent Cloth (T8)' },
+      { id: 'T8_LEATHER', name: 'Resilient Leather (T8)' },
+      { id: 'T8_PLANKS', name: 'Whitewood Planks (T8)' },
+      { id: 'T8_2H_AXE', name: "Elder's Greataxe (T8)" },
+      { id: 'T8_2H_AXE_AVALON', name: "Elder's Realmbreaker (T8)" },
+      { id: 'T8_MAIN_SWORD', name: "Elder's Broadsword (T8)" },
+      { id: 'T8_2H_BOW', name: "Elder's Bow (T8)" },
+      { id: 'T8_ARMOR_PLATE_SET1', name: "Elder's Soldier Armor (T8)" },
+      { id: 'T8_ARMOR_LEATHER_SET1', name: "Elder's Mercenary Jacket (T8)" }
+    ];
+
+    const AVALON_ZONES = [
+      { name: 'Quaent-Al-Nusom', tier: 8, layout: 'H', ho: true, green: 3, blue: 4, gold: 2, resources: ['Ore', 'Fiber', 'Hide'], dungeons: 'Group + Solo' },
+      { name: 'Cieos-Av-Osuam', tier: 8, layout: 'X', ho: true, green: 2, blue: 3, gold: 2, resources: ['Wood', 'Ore', 'Stone'], dungeons: 'Group' },
+      { name: 'Huyos-Umu-Nusom', tier: 6, layout: 'C', ho: true, green: 4, blue: 2, gold: 1, resources: ['Hide', 'Fiber'], dungeons: 'Solo + Group' },
+      { name: 'Oasos-Urom-Al', tier: 6, layout: 'F', ho: false, green: 3, blue: 3, gold: 0, resources: ['Ore', 'Wood'], dungeons: 'Solo' },
+      { name: 'Fieos-Ai-Ayon', tier: 6, layout: 'O', ho: true, green: 2, blue: 4, gold: 1, resources: ['Fiber', 'Stone'], dungeons: 'Group' },
+      { name: 'Setos-Av-Nusom', tier: 4, layout: 'P', ho: false, green: 5, blue: 1, gold: 0, resources: ['Wood', 'Hide'], dungeons: 'Solo' },
+      { name: 'Teros-Am-Osuam', tier: 6, layout: 'S', ho: false, green: 3, blue: 2, gold: 1, resources: ['Ore', 'Hide', 'Wood'], dungeons: 'Group' },
+      { name: 'Vuyos-El-Ayon', tier: 8, layout: 'T', ho: true, green: 1, blue: 3, gold: 3, resources: ['Ore', 'Fiber', 'Hide', 'Wood'], dungeons: 'Avalonian Raid' }
+    ];
+
+    // ==================== 4. GLOBAL STATE (EVERY FEATURE STARTS BLANK) ====================
+    const state = {
+      view: 'dashboard',
+      server: Store.get('wh_server_v2', 'west'),
+      battlesByServer: { west: [], europe: [], east: [] },
+      selectedBattleId: null,
+      selectedAlliance: 'ALL',
+      bbTimer: null,
+      killsByServer: { west: [], europe: [], east: [] },
+      builds: Store.get('wh_builds_v2', []),
+      buildFilter: 'all',
+      rankTab: 'players',
+      lootRows: [],
+      craftMode: 'all',
+      selectedRecipe: null,
+      ownedMats: {},
+      marketPrices: {},
+      craftQueue: Store.get('wh_craft_queue_v2', []),
+      alerts: Store.get('wh_alerts_v2', []),
+      selectedMarketItem: '',
+      flipsByServer: { west: [], europe: [], east: [] },
+      goldByServer: { west: null, europe: null, east: null },
+      goldHistoryByServer: { west: [], europe: [], east: [] },
+      goldTf: '24H',
+      charts: { trends: null, gold: null }
+    };
+
+    // ==================== 5. NAVIGATION & SERVER SWITCHER ====================
+    function navigate(viewId) {
+      state.view = viewId;
+      document.querySelectorAll('.view-panel').forEach(p => p.classList.toggle('active', p.id === `view-${viewId}`));
+      document.querySelectorAll('[data-nav]').forEach(btn => {
+        if (btn.classList.contains('nav-item')) btn.classList.toggle('active', btn.dataset.nav === viewId);
+      });
+      closeMobileSidebar();
+      if (viewId === 'dashboard') renderDashboard();
+      if (viewId === 'battleboard') renderBattleboard();
+      if (viewId === 'killboard') renderKillboard();
+      if (viewId === 'rankings') renderRankings();
+      if (viewId === 'gold') renderGoldView();
+    }
+
+    function setServer(srv, triggerFetch = true) {
+      state.server = srv;
+      Store.set('wh_server_v2', srv);
+      document.querySelectorAll('.srv-btn').forEach(b => {
+        const on = b.dataset.server === srv;
+        b.classList.toggle('bg-crimson-600', on);
+        b.classList.toggle('text-bone', on);
+        b.classList.toggle('text-cinder', !on);
+      });
+      const label = REGION_LABELS[srv];
+      ['dash-region-label', 'bb-server-heading', 'kb-server-heading', 'exp-server-heading', 'rk-server-heading', 'gold-server-heading'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = label;
+      });
+      const dbr = document.getElementById('dash-bb-region');
+      if (dbr) dbr.textContent = REGION_SHORT[srv];
+
+      state.selectedBattleId = (state.battlesByServer[srv][0] || {}).id || null;
+      state.selectedAlliance = 'ALL';
+      updateGoldTicker();
+      renderDashboard();
+      renderBattleboard();
+      renderKillboard();
+      renderRankings();
+      renderGoldView();
+      renderMarketFlips();
+
+      if (triggerFetch) {
+        toast(`Switched to ${label}`, 'info');
+        fetchLiveBattles(srv);
+        fetchLiveKills(srv);
+      }
+    }
+
+    function closeMobileSidebar() {
+      document.getElementById('sidebar').classList.add('-translate-x-full');
+      document.getElementById('sidebar-backdrop').classList.add('hidden');
+    }
+
+    document.getElementById('mobile-menu-btn').addEventListener('click', () => {
+      document.getElementById('sidebar').classList.remove('-translate-x-full');
+      document.getElementById('sidebar-backdrop').classList.remove('hidden');
+    });
+    document.getElementById('close-sidebar-btn').addEventListener('click', closeMobileSidebar);
+    document.getElementById('sidebar-backdrop').addEventListener('click', closeMobileSidebar);
+    document.querySelectorAll('[data-nav]').forEach(btn => btn.addEventListener('click', () => navigate(btn.dataset.nav)));
+    document.querySelectorAll('.srv-btn').forEach(btn => btn.addEventListener('click', () => setServer(btn.dataset.server, true)));
+
+    // ==================== 6. LIVE CLOCK & BANDIT HH:MM:SS ====================
+    const BANDIT_OFFSETS = { west: 0, europe: 1380, east: 2760 };
+    function banditRemainingSec(srv = state.server) {
+      const cycleSec = 4 * 3600;
+      const epochSec = Math.floor(Date.now() / 1000) + (BANDIT_OFFSETS[srv] || 0);
+      return cycleSec - (epochSec % cycleSec);
+    }
+
+    function updateClocks() {
+      const now = new Date();
+      document.getElementById('ticker-utc').textContent = now.toISOString().slice(11, 19);
+      const activeHms = formatHMS(banditRemainingSec(state.server));
+      document.getElementById('ticker-bandit').textContent = activeHms;
+
+      const dashBandit = document.getElementById('dash-card-bandit-val');
+      if (dashBandit) dashBandit.textContent = activeHms;
+
+      ['west', 'europe', 'east'].forEach(srv => {
+        const el = document.getElementById(`bandit-hms-${srv}`);
+        if (el) el.textContent = formatHMS(banditRemainingSec(srv));
+      });
+    }
+
+    function updateGoldTicker() {
+      const rate = state.goldByServer[state.server];
+      document.getElementById('ticker-gold').textContent = rate ? `${rate.toLocaleString()}s` : '—';
+      document.getElementById('ticker-prem').textContent = rate ? fmt(rate * 3750) : '—';
+    }
+
+    // ==================== 7. DASHBOARD (SYNCS & SHOWS ALL FEATURES) ====================
+    function renderDashboard() {
+      const bonus = getTodaysDailyBonus();
+      document.getElementById('dash-daily-bonus-text').textContent = `${bonus.category} (${bonus.bonus} — ${bonus.cities})`;
+
+      const srv = state.server;
+      const battles = state.battlesByServer[srv];
+      const kills = state.killsByServer[srv];
+      const gold = state.goldByServer[srv];
+      const flips = state.flipsByServer[srv] || [];
+      const topFlip = flips[0];
+
+      // Removed Players & Guilds, Loot Split & CSV, Avalon Maps from Dashboard as requested
+      const cards = [
+        { nav: 'battleboard', icon: 'swords', title: 'Battleboard', val: battles.length ? `${battles.length} Battles` : 'Blank', sub: `${REGION_SHORT[srv]} server ZvZ reports`, accent: 'text-crimson-500' },
+        { nav: 'killboard', icon: 'skull', title: 'Killboard', val: kills.length ? `${kills.length} Kills` : 'Blank', sub: `${REGION_SHORT[srv]} PvP kill feed`, accent: 'text-exec' },
+        { nav: 'builds', icon: 'shield', title: 'Builds', val: state.builds.length ? `${state.builds.length} Posted` : 'Blank', sub: 'Community & custom loadouts', accent: 'text-ember-400' },
+        { nav: 'rankings', icon: 'trophy', title: 'Rankings', val: battles.length ? 'Synced' : 'Blank', sub: 'Players, Guilds & Alliances', accent: 'text-ember-400' },
+        { nav: 'bandit', icon: 'flag', title: 'Bandit Assault', val: formatHMS(banditRemainingSec(srv)), valId: 'dash-card-bandit-val', sub: 'Next roll window (hh:mm:ss)', accent: 'text-ember-400' },
+        { nav: 'crafting', icon: 'hammer', title: 'Crafting & Refining', val: `${bonus.category}`, sub: `Daily Bonus: ${bonus.bonus} (${bonus.cities})`, accent: 'text-jade' },
+        { nav: 'trends', icon: 'trending-up', title: 'Market & Alerts', val: topFlip ? `${topFlip.name} (+${fmt(topFlip.profit)}s)` : (state.alerts.length ? `${state.alerts.length} Alerts` : 'Blank'), sub: topFlip ? `Buy ${topFlip.buyCity} → Sell ${topFlip.sellCity} (${topFlip.roi.toFixed(1)}% ROI)` : 'Click Scan Flips for best market flips', accent: 'text-jade' },
+        { nav: 'gold', icon: 'coins', title: 'Gold (Silver Equiv.)', val: gold ? `${gold.toLocaleString()} Silver` : 'Blank', sub: gold ? `1 Gold = ${gold.toLocaleString()} Silver (${REGION_SHORT[srv]})` : 'Click Sync All for silver rate', accent: 'text-ember-400' },
+        { nav: 'gold', icon: 'gem', title: 'Premium (Silver Price)', val: gold ? `${fmt(gold * 3750)} Silver` : 'Blank', sub: gold ? `30 Days (3,750 Gold) · ${REGION_SHORT[srv]}` : 'Click Sync All for 30d Silver price', accent: 'text-ember-400' }
+      ];
+
+      document.getElementById('dash-features-grid').innerHTML = cards.map(c => `
+        <button type="button" data-dash-nav="${c.nav}" class="war-card p-4 text-left hover:border-crimson-600 transition group">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-semibold uppercase text-cinder group-hover:text-bone">${c.title}</span>
+            <i data-lucide="${c.icon}" class="w-4 h-4 text-cinder group-hover:text-crimson-500"></i>
+          </div>
+          <div ${c.valId ? `id="${c.valId}"` : ''} class="font-mono text-lg font-bold mt-2 truncate tabular ${c.accent}">${esc(c.val)}</div>
+          <div class="text-xs text-cinder mt-1 truncate">${esc(c.sub)}</div>
+        </button>
+      `).join('');
+
+      document.querySelectorAll('[data-dash-nav]').forEach(btn => btn.addEventListener('click', () => navigate(btn.dataset.dashNav)));
+
+      // Combat Category: Recent Battles
+      document.getElementById('dash-battles-list').innerHTML = battles.slice(0, 4).map(b => `
+        <button type="button" data-open-battle="${esc(b.id)}" class="w-full text-left war-card-elev p-3 hover:border-crimson-600 transition flex items-center justify-between gap-3">
+          <div class="min-w-0">
+            <div class="text-sm font-semibold text-bone truncate">${esc(b.location)} <span class="text-xs font-mono text-cinder">#${esc(b.id)}</span></div>
+            <div class="text-xs text-cinder mt-0.5">${b.alliances.map(a => esc(a.name)).join(' vs ') || 'Mixed'}</div>
+          </div>
+          <div class="text-right font-mono text-xs shrink-0 tabular">
+            <div class="text-ember-400 font-bold">${b.totalPlayers}P</div>
+            <div class="text-cinder">${b.totalKills}K · ${fmt(b.totalFame)}</div>
+          </div>
+        </button>
+      `).join('') || '<div class="text-xs text-cinder py-6 text-center">No recent battles synced for this server. Click <strong>Sync All Live Data</strong>.</div>';
+
+      document.querySelectorAll('[data-open-battle]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          state.selectedBattleId = btn.dataset.openBattle;
+          state.selectedAlliance = 'ALL';
+          navigate('battleboard');
+        });
+      });
+
+      // Combat Category: Recent Kills
+      document.getElementById('dash-kills-list').innerHTML = kills.slice(0, 4).map(k => `
+        <div class="war-card-elev p-3 flex items-center justify-between gap-2 text-xs">
+          <div class="flex items-center gap-2 min-w-0">
+            <div class="gear-slot w-8 h-8 shrink-0">${imgTag(k.killerWeapon, 2, '', 'w-7 h-7 object-contain')}</div>
+            <div class="min-w-0">
+              <div class="font-semibold text-jade truncate">${esc(k.killer)} <span class="text-cinder font-normal">killed</span> <span class="text-exec">${esc(k.victim)}</span></div>
+              <div class="text-cinder truncate">${esc(k.killerGuild)} · ${esc(k.time)}</div>
+            </div>
+          </div>
+          <span class="font-mono text-ember-400 shrink-0">${fmt(k.fame)}</span>
+        </div>
+      `).join('') || '<div class="text-xs text-cinder py-6 text-center">No recent kills synced for this server. Click <strong>Sync All Live Data</strong>.</div>';
+
+      // Combat Category: Community Builds
+      document.getElementById('dash-builds-list').innerHTML = state.builds.slice(0, 4).map(b => `
+        <button type="button" data-dash-build-nav="builds" class="w-full text-left war-card-elev p-3 hover:border-ember-500 transition flex items-center justify-between gap-2 text-xs">
+          <div class="flex items-center gap-2 min-w-0">
+            <div class="gear-slot w-8 h-8 shrink-0">${imgTag(b.weapon, 2, '', 'w-7 h-7 object-contain')}</div>
+            <div class="min-w-0">
+              <div class="font-semibold text-bone truncate">${esc(b.title)}</div>
+              <div class="text-cinder truncate">${esc(b.mode)} · by ${esc(b.author)}</div>
+            </div>
+          </div>
+          <span class="badge-new font-mono shrink-0">+${b.votes}</span>
+        </button>
+      `).join('') || '<div class="text-xs text-cinder py-6 text-center">No community builds fetched yet. Click <strong>Sync API &amp; Community Builds</strong>.</div>';
+
+      document.querySelectorAll('[data-dash-build-nav]').forEach(btn => btn.addEventListener('click', () => navigate('builds')));
+      if (window.lucide) lucide.createIcons();
+    }
+
+    async function fetchCommunityBuilds() {
+      toast('Fetching live Albion Online community builds...', 'info');
+      const existingIds = new Set(state.builds.map(b => b.id));
+      const added = [];
+      try {
+        // Pull live community-posted build threads from r/albiononline
+        const json = await fetchWithTimeout('https://www.reddit.com/r/albiononline/search.json?q=build&restrict_sr=1&sort=new&limit=15', 7000);
+        const posts = json?.data?.children || [];
+        posts.forEach(({ data: p }) => {
+          if (!p || !p.title || existingIds.has('rd_' + p.id)) return;
+          const lower = `${p.title} ${p.selftext || ''}`.toLowerCase();
+          const weapon = lower.includes('axe') || lower.includes('realmbreaker') ? 'T8_2H_AXE_AVALON'
+            : lower.includes('dagger') || lower.includes('bloodletter') ? 'T8_MAIN_DAGGER_HELL'
+            : lower.includes('fire') || lower.includes('brimstone') ? 'T8_2H_FIRESTAFF_HELL'
+            : lower.includes('frost') || lower.includes('permafrost') ? 'T8_2H_FROSTSTAFF_CRYSTAL'
+            : lower.includes('bow') ? 'T8_2H_BOW_AVALON'
+            : lower.includes('hammer') ? 'T8_2H_HAMMER'
+            : lower.includes('mace') ? 'T8_MAIN_MACE_AVALON'
+            : lower.includes('staff') || lower.includes('holy') || lower.includes('nature') ? 'T8_MAIN_HOLYSTAFF_AVALON'
+            : 'T8_MAIN_SWORD_CRYSTAL';
+          const mode = lower.includes('zvz') ? 'ZvZ' : lower.includes('mist') ? 'Mists Solo' : lower.includes('gank') ? 'Ganking' : lower.includes('avalon') ? 'Avalon PvE' : 'Small Scale';
+          added.push({
+            id: 'rd_' + p.id,
+            title: p.title.slice(0, 72),
+            mode,
+            role: 'Community Post',
+            author: 'u/' + (p.author || 'albion_player'),
+            votes: Number(p.score || 1),
+            weapon,
+            head: 'T8_HEAD_LEATHER_SET3',
+            armor: 'T8_ARMOR_LEATHER_HELL',
+            shoes: 'T8_SHOES_CLOTH_SET2',
+            cape: 'T8_CAPEITEM_FW_MARTLOCK',
+            food: 'T7_MEAL_OMELETTE',
+            notes: (p.selftext || 'Posted on r/albiononline community.').slice(0, 140),
+            url: 'https://www.reddit.com' + (p.permalink || '')
+          });
+        });
+      } catch {}
+
+      if (added.length) {
+        state.builds = [...added, ...state.builds];
+        Store.set('wh_builds_v2', state.builds);
+        renderBuilds();
+        renderDashboard();
+        toast(`Synced ${added.length} live community builds from r/albiononline!`, 'ok');
+      } else {
+        toast('No new community build posts returned right now (try again shortly).', 'info');
+      }
+    }
+
+    async function scanMarketFlips(srv = state.server) {
+      const box = document.getElementById('market-flips-list');
+      if (box) box.innerHTML = '<div class="text-cinder font-mono">Scanning AODP spreads across Royal Cities &amp; Black Market...</div>';
+      const items = MARKET_ITEM_CATALOG.slice(0, 12).map(x => x.id);
+      try {
+        const rows = await fetchWithTimeout(`${AODP_HOSTS[srv]}/api/v2/stats/prices/${items.join(',')}.json?locations=${encodeURIComponent(SELL_CITIES.join(','))}`, 7500);
+        const byItem = new Map();
+        (rows || []).forEach(r => {
+          if (r.sell_price_min > 0) {
+            if (!byItem.has(r.item_id)) byItem.set(r.item_id, []);
+            byItem.get(r.item_id).push(r);
+          }
+        });
+        const flips = [];
+        byItem.forEach((quotes, id) => {
+          if (quotes.length < 2) return;
+          const buyPref = document.getElementById('flip-buy-city')?.value || 'all';
+          const sellPref = document.getElementById('flip-sell-city')?.value || 'all';
+          const buyPool = buyPref === 'all' ? quotes.filter(q => q.city !== 'Black Market') : quotes.filter(q => q.city === buyPref);
+          const sellPool = sellPref === 'all' ? quotes : quotes.filter(q => q.city === sellPref);
+          if (!buyPool.length || !sellPool.length) return;
+          const low = [...buyPool].sort((a, b) => a.sell_price_min - b.sell_price_min)[0];
+          const high = [...sellPool].sort((a, b) => b.sell_price_min - a.sell_price_min)[0];
+          const netSell = Math.round(high.sell_price_min * 0.935);
+          const profit = netSell - low.sell_price_min;
+          const roi = (profit / low.sell_price_min) * 100;
+          if (profit > 0 && roi >= 3 && roi <= 300) {
+            const cat = MARKET_ITEM_CATALOG.find(c => c.id === id);
+            flips.push({ id, name: cat ? cat.name : id, buyCity: low.city, buyPrice: low.sell_price_min, sellCity: high.city, sellPrice: high.sell_price_min, profit, roi });
+          }
+        });
+        flips.sort((a, b) => b.profit - a.profit);
+        state.flipsByServer[srv] = flips.slice(0, 8);
+        renderMarketFlips();
+        renderDashboard();
+        toast(`Found ${state.flipsByServer[srv].length} live market flips (${REGION_SHORT[srv]})!`, 'ok');
+      } catch (e) {
+        if (box) box.innerHTML = `<div class="text-cinder">Flip scan unavailable (${esc(e.message)}).</div>`;
+      }
+    }
+
+    function renderMarketFlips() {
+      const box = document.getElementById('market-flips-list');
+      if (!box) return;
+      const flips = state.flipsByServer[state.server] || [];
+      if (!flips.length) {
+        box.innerHTML = '<div class="text-cinder">Click <strong>Scan Flips</strong> to find profitable Royal City &rarr; Caerleon / Black Market flips.</div>';
+        return;
+      }
+      box.innerHTML = flips.slice(0, 5).map(f => `
+        <div class="war-card-elev p-2.5 flex items-center justify-between gap-2">
+          <div class="min-w-0">
+            <div class="font-semibold text-bone truncate">${esc(f.name)}</div>
+            <div class="text-[11px] text-cinder font-mono">${esc(f.buyCity)} (${fmt(f.buyPrice)}s) &rarr; ${esc(f.sellCity)} (${fmt(f.sellPrice)}s)</div>
+          </div>
+          <div class="text-right font-mono shrink-0">
+            <div class="text-jade font-bold">+${fmt(f.profit)}s</div>
+            <div class="text-[10px] text-ember-400">+${f.roi.toFixed(1)}% ROI</div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    let isSyncingAll = false;
+    async function syncAllLive() {
+      if (isSyncingAll) return;
+      isSyncingAll = true;
+      const lbl = document.getElementById('conn-label');
+      const dot = document.getElementById('conn-dot');
+      if (lbl) lbl.textContent = 'Syncing...';
+      if (dot) dot.className = 'w-2 h-2 rounded-full bg-ember-400 animate-pulse';
+      toast(`Syncing all live feeds for ${REGION_LABELS[state.server]}...`, 'info');
+      try {
+        const res = await Promise.allSettled([
+          fetchLiveBattles(state.server),
+          fetchLiveKills(state.server),
+          fetchLiveGold(state.server),
+          scanMarketFlips(state.server),
+          fetchCommunityBuilds()
+        ]);
+        const okCount = res.filter(r => r.status === 'fulfilled').length;
+        if (lbl) lbl.textContent = okCount > 0 ? 'Synced' : 'Retry Sync';
+        if (dot) dot.className = `w-2 h-2 rounded-full ${okCount > 0 ? 'bg-jade' : 'bg-crimson-500'}`;
+        renderDashboard();
+      } finally {
+        isSyncingAll = false;
+      }
+    }
+    document.getElementById('dash-sync-all-btn').addEventListener('click', syncAllLive);
+    document.getElementById('btn-sync-now').addEventListener('click', syncAllLive);
+    document.getElementById('dash-sync-builds-btn').addEventListener('click', fetchCommunityBuilds);
+    document.getElementById('fetch-community-builds-btn').addEventListener('click', fetchCommunityBuilds);
+    document.getElementById('scan-flips-btn').addEventListener('click', () => scanMarketFlips(state.server));
+
+    // ==================== 8. BATTLEBOARD (PER-SERVER, STARTS BLANK) ====================
+    function renderBattleboard() {
+      const battles = state.battlesByServer[state.server] || [];
+      const q = (document.getElementById('bb-search').value || '').toLowerCase().trim();
+      const minP = Number(document.getElementById('bb-min-players').value) || 0;
+      const filtered = battles.filter(b => {
+        if (b.totalPlayers < minP) return false;
+        if (!q) return true;
+        return (b.location || '').toLowerCase().includes(q)
+          || b.alliances.some(a => a.name.toLowerCase().includes(q))
+          || b.players.some(p => p.guild.toLowerCase().includes(q) || p.name.toLowerCase().includes(q));
+      });
+      document.getElementById('bb-count').textContent = `${filtered.length} battles`;
+
+      document.getElementById('bb-list').innerHTML = filtered.map(b => {
+        const active = b.id === state.selectedBattleId;
+        return `
+          <button type="button" data-bb-pick="${esc(b.id)}" class="w-full text-left p-3 rounded-lg border transition ${active ? 'bg-crimson-950/40 border-crimson-600' : 'bg-forge border-rim hover:border-cinder'}">
+            <div class="flex justify-between items-center gap-2">
+              <span class="text-xs font-semibold text-bone truncate">${esc(b.location || 'Outlands')}</span>
+              <span class="text-[11px] font-mono text-ember-400">${b.totalPlayers}P · ${b.totalKills}K</span>
+            </div>
+            <div class="flex justify-between items-center mt-1 text-[11px] text-cinder font-mono">
+              <span class="truncate">${b.alliances.map(a => esc(a.name)).join(' vs ') || 'Mixed'}</span>
+              <span>${fmt(b.totalFame)} Fame</span>
+            </div>
+          </button>`;
+      }).join('') || `<div class="text-xs text-cinder text-center py-10">No battles loaded for ${REGION_LABELS[state.server]}. Click <strong>Fetch Live</strong> or import a Battle JSON.</div>`;
+
+      document.querySelectorAll('[data-bb-pick]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          state.selectedBattleId = btn.dataset.bbPick;
+          state.selectedAlliance = 'ALL';
+          renderBattleboard();
+        });
+      });
+
+      const cur = battles.find(b => b.id === state.selectedBattleId) || filtered[0];
+      if (!cur) {
+        document.getElementById('bb-detail-header').innerHTML = '<div class="text-xs text-cinder">Select a battle on the left to inspect alliance breakdown and player damage meters.</div>';
+        document.getElementById('bb-alliance-pills').innerHTML = '';
+        document.getElementById('bb-players-body').innerHTML = '<tr><td colspan="6" class="py-8 text-center text-cinder">No battle selected.</td></tr>';
+        return;
+      }
+
+      document.getElementById('bb-detail-header').innerHTML = `
+        <div>
+          <div class="flex items-center gap-2">
+            <h2 class="font-display text-xl font-bold">${esc(cur.location || 'Outlands Battle')}</h2>
+            <span class="badge-hot font-mono">#${esc(cur.id)}</span>
+          </div>
+          <div class="text-xs text-cinder font-mono mt-0.5">${esc((cur.startTime || '').replace('T', ' ').slice(0, 19))} UTC · ${REGION_LABELS[state.server]}</div>
+        </div>
+        <div class="flex gap-3 text-right font-mono text-xs tabular">
+          <div><div class="text-cinder">Players</div><div class="text-bone font-bold text-sm">${cur.totalPlayers}</div></div>
+          <div><div class="text-cinder">Kills</div><div class="text-crimson-500 font-bold text-sm">${cur.totalKills}</div></div>
+          <div><div class="text-cinder">Total Fame</div><div class="text-ember-400 font-bold text-sm">${fmt(cur.totalFame)}</div></div>
+        </div>
+      `;
+
+      const pills = [{ name: 'ALL', kills: cur.totalKills, fame: cur.totalFame }, ...cur.alliances];
+      document.getElementById('bb-alliance-pills').innerHTML = pills.map(a => `
+        <button type="button" data-bb-all="${esc(a.name)}" class="chip ${state.selectedAlliance === a.name ? 'active' : ''}">
+          ${esc(a.name)} (${a.kills}K · ${fmt(a.fame)})
+        </button>
+      `).join('');
+      document.querySelectorAll('[data-bb-all]').forEach(btn => {
+        btn.addEventListener('click', () => { state.selectedAlliance = btn.dataset.bbAll; renderBattleboard(); });
+      });
+
+      const players = cur.players.filter(p => state.selectedAlliance === 'ALL' || p.alliance === state.selectedAlliance)
+        .sort((a, b) => (b.dmg || b.killFame) - (a.dmg || a.killFame));
+      const maxImpact = Math.max(1, ...players.map(p => p.dmg || p.killFame || 1));
+
+      document.getElementById('bb-players-body').innerHTML = players.map(p => {
+        const val = p.dmg || p.killFame || 0;
+        const pct = Math.max(8, Math.round((val / maxImpact) * 100));
+        return `
+          <tr>
+            <td class="py-2 pr-2 font-sans font-semibold text-bone">${esc(p.name)}</td>
+            <td class="py-2 pr-2 font-sans text-cinder">${esc(p.guild)} ${p.alliance ? `<span class="text-ember-400">[${esc(p.alliance)}]</span>` : ''}</td>
+            <td class="py-2 pr-2 text-right text-jade">${p.kills}</td>
+            <td class="py-2 pr-2 text-right text-exec">${p.deaths}</td>
+            <td class="py-2 pr-2 text-right text-bone">${fmt(p.killFame)}</td>
+            <td class="py-2 text-right w-36">
+              <div class="text-[11px] text-ember-400 mb-0.5">${fmt(val)}</div>
+              <div class="h-1.5 bg-ash rounded-full overflow-hidden"><div class="h-full bg-crimson-600" style="width:${pct}%"></div></div>
+            </td>
+          </tr>`;
+      }).join('') || '<tr><td colspan="6" class="py-6 text-center text-cinder">No player rows in this alliance filter.</td></tr>';
+    }
+
+    async function fetchLiveBattles(srv = state.server) {
+      const status = document.getElementById('bb-api-status');
+      status.textContent = `Fetching live ${REGION_LABELS[srv]} battles...`;
+      try {
+        let raw = null;
+        try {
+          const minP = document.getElementById('bb-min-players').value || 10;
+          raw = await fetchWithTimeout(`${ALBIONBB_HOSTS[srv]}/battles?minPlayers=${minP}`, 7000);
+        } catch {
+          raw = await fetchGameinfoResilient('/battles?range=day&limit=25&offset=0&sort=recent', srv);
+        }
+        const rows = Array.isArray(raw) ? raw : (raw.battles || raw.data || []);
+        state.battlesByServer[srv] = rows.slice(0, 30).map(b => {
+          const pArr = Array.isArray(b.players) ? b.players : Object.values(b.players || {});
+          const aMap = new Map();
+          pArr.forEach(p => {
+            const an = p.allianceName || p.alliance || 'No Alliance';
+            const prev = aMap.get(an) || { name: an, kills: 0, deaths: 0, fame: 0 };
+            prev.kills += Number(p.kills || 0);
+            prev.deaths += Number(p.deaths || 0);
+            prev.fame += Number(p.killFame || 0);
+            aMap.set(an, prev);
+          });
+          return {
+            id: String(b.albionId || b.id),
+            startTime: b.startedAt || b.startTime || new Date().toISOString(),
+            location: b.location || b.clusterName || `Battle #${b.albionId || b.id}`,
+            totalPlayers: Number(b.totalPlayers || pArr.length || 0),
+            totalKills: Number(b.totalKills || 0),
+            totalFame: Number(b.totalFame || 0),
+            alliances: [...aMap.values()].sort((x, y) => y.fame - x.fame).slice(0, 6),
+            players: pArr.slice(0, 50).map(p => ({
+              name: p.name || 'Unknown',
+              guild: p.guildName || p.guild || '-',
+              alliance: p.allianceName || p.alliance || '',
+              kills: Number(p.kills || 0),
+              deaths: Number(p.deaths || 0),
+              killFame: Number(p.killFame || 0),
+              dmg: Number(p.damage || p.killFame || 0)
+            }))
+          };
+        });
+        if (srv === state.server) {
+          state.selectedBattleId = (state.battlesByServer[srv][0] || {}).id || null;
+          status.textContent = `Loaded ${state.battlesByServer[srv].length} live battles for ${REGION_LABELS[srv]} at ${new Date().toLocaleTimeString()}.`;
+          renderBattleboard();
+          renderRankings();
+          renderDashboard();
+        }
+        toast(`Loaded ${state.battlesByServer[srv].length} battles (${REGION_SHORT[srv]})`, 'ok');
+      } catch (err) {
+        status.textContent = `Could not reach live ${REGION_LABELS[srv]} battle API (${err.message}). Try again or import a Battle JSON.`;
+        toast(`Battle fetch failed (${err.message})`, 'err');
+      }
+    }
+
+    document.getElementById('bb-search').addEventListener('input', renderBattleboard);
+    document.getElementById('bb-min-players').addEventListener('change', renderBattleboard);
+    document.getElementById('bb-refresh-btn').addEventListener('click', () => fetchLiveBattles(state.server));
+    function startBbAutoRefresh() {
+      clearInterval(state.bbTimer);
+      if (document.getElementById('bb-autorefresh').checked) {
+        state.bbTimer = setInterval(() => fetchLiveBattles(state.server), 15000);
+      }
+    }
+    document.getElementById('bb-autorefresh').addEventListener('change', startBbAutoRefresh);
+    document.getElementById('bb-json-import').addEventListener('change', e => {
+      const f = e.target.files[0]; if (!f) return;
+      const r = new FileReader();
+      r.onload = () => {
+        try {
+          const j = JSON.parse(r.result);
+          const pArr = Array.isArray(j.players) ? j.players : Object.values(j.players || {});
+          const imported = {
+            id: String(j.id || Date.now()),
+            startTime: j.startTime || new Date().toISOString(),
+            location: j.clusterName || j.location || f.name,
+            totalPlayers: pArr.length || Number(j.totalPlayers || 0),
+            totalKills: Number(j.totalKills || 0),
+            totalFame: Number(j.totalFame || 0),
+            alliances: [{ name: 'IMPORTED', kills: Number(j.totalKills || 0), deaths: 0, fame: Number(j.totalFame || 0) }],
+            players: pArr.map(p => ({ name: p.name || 'Player', guild: p.guildName || p.guild || '-', alliance: p.allianceName || 'IMPORTED', kills: Number(p.kills || 0), deaths: Number(p.deaths || 0), killFame: Number(p.killFame || 0), dmg: Number(p.damage || p.killFame || 0) }))
+          };
+          state.battlesByServer[state.server] = [imported, ...state.battlesByServer[state.server]];
+          state.selectedBattleId = imported.id;
+          renderBattleboard();
+          renderDashboard();
+          toast(`Imported battle JSON (${imported.players.length} players)`, 'ok');
+        } catch { toast('Invalid battle JSON file', 'err'); }
+      };
+      r.readAsText(f);
+    });
+
+    // ==================== 9. KILLBOARD (RAIDQUEST REFERENCE, STARTS BLANK) ====================
+    function fmtK(n) {
+      const num = Number(n || 0);
+      if (num >= 1e6) return (num / 1e6).toFixed(1) + 'M Fame';
+      return (num / 1e3).toFixed(1) + 'K Fame';
+    }
+
+    function relTime(iso) {
+      if (!iso) return 'Just now';
+      const diff = Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 1000));
+      if (isNaN(diff)) return iso;
+      if (diff < 60) return `${diff}s ago`;
+      if (diff < 3600) return `${Math.floor(diff / 60)} minutes ago`;
+      if (diff < 86400) return `${Math.floor(diff / 3600)} hours ago`;
+      return `${Math.floor(diff / 86400)} days ago`;
+    }
+
+    function gearGridHtml(eq) {
+      const g = eq || {};
+      const row1 = [g.MainHand, g.OffHand, g.Head, g.Armor, g.Shoes, g.Cape];
+      const row2 = [g.Food, g.Potion, g.Bag, g.Mount, null, null];
+      const drawSlot = (slot, idx, isSecondRow) => {
+        if (isSecondRow && idx >= 4) return '<div class="w-9 h-9"></div>';
+        if (!slot || !slot.Type) return '<div class="w-9 h-9 rounded-md bg-ash border border-rim/60"></div>';
+        const ench = (String(slot.Type).match(/@([1-4])$/) || [])[1] || 0;
+        const ring = ench == 4 ? 'border-amber-300' : ench == 3 ? 'border-purple-400' : ench == 2 ? 'border-sky-400' : ench == 1 ? 'border-jade' : 'border-rim';
+        return `<div class="relative w-9 h-9 rounded-md bg-ash border ${ring} flex items-center justify-center overflow-hidden" title="${esc(slot.Type)}">
+          ${imgTag(slot.Type, slot.Quality || 1, '', 'w-8 h-8 object-contain')}
+          ${slot.Count > 1 ? `<span class="absolute bottom-0 right-0.5 text-[9px] font-mono font-bold text-bone bg-black/75 px-1 rounded">${slot.Count}</span>` : ''}
+        </div>`;
+      };
+      return `<div class="space-y-1 shrink-0">
+        <div class="grid grid-cols-6 gap-1">${row1.map((s, i) => drawSlot(s, i, false)).join('')}</div>
+        <div class="grid grid-cols-6 gap-1">${row2.map((s, i) => drawSlot(s, i, true)).join('')}</div>
+      </div>`;
+    }
+
+    function renderKillboard() {
+      const kills = state.killsByServer[state.server] || [];
+      const q = (document.getElementById('kb-search').value || '').toLowerCase().trim();
+      const sz = document.getElementById('kb-size').value;
+      const wq = (document.getElementById('kb-weapon').value || '').toLowerCase().trim();
+      document.getElementById('kb-weapon-clear').classList.toggle('hidden', !wq);
+
+      const rows = kills.filter(k => {
+        if (sz !== 'all' && k.size !== sz) return false;
+        if (wq && !`${k.killerWeapon} ${k.victimWeapon}`.toLowerCase().includes(wq)) return false;
+        if (!q) return true;
+        return `${k.killer} ${k.killerGuild} ${k.victim} ${k.victimGuild}`.toLowerCase().includes(q);
+      });
+
+      document.getElementById('kb-feed').innerHTML = rows.map(k => `
+        <div class="war-card p-3.5 flex flex-col lg:flex-row items-center justify-between gap-4">
+          <div class="flex items-center gap-3 w-full lg:w-auto min-w-0">
+            ${gearGridHtml(k.killerEq)}
+            <div class="min-w-0">
+              <div class="text-sm font-bold text-ember-400 truncate">${esc(k.killer)}</div>
+              ${k.killerGuild ? `<div class="text-xs text-cinder truncate">${esc(k.killerGuild)}</div>` : ''}
+              <div class="text-xs font-mono text-cinder">${k.killerIP} IP</div>
+            </div>
+          </div>
+
+          <div class="bg-forge border border-rim rounded-lg px-4 py-2 text-center shrink-0 min-w-[165px]">
+            <div class="text-xs font-bold text-crimson-500 tracking-wider">KILLED</div>
+            <div class="text-[11px] text-cinder mt-0.5">${esc(relTime(k.timestamp))}</div>
+            <div class="text-xs font-mono font-bold text-ember-400 mt-1">${fmtK(k.fame)}</div>
+            <button type="button" data-kb-event="${esc(k.id)}" class="text-[11px] text-bone underline hover:text-ember-400 mt-1">View Full Event</button>
+          </div>
+
+          <div class="flex items-center gap-3 w-full lg:w-auto justify-end min-w-0">
+            <div class="min-w-0 text-right">
+              <div class="text-sm font-bold text-exec truncate">${esc(k.victim)}</div>
+              ${k.victimGuild ? `<div class="text-xs text-cinder truncate">${esc(k.victimGuild)}</div>` : ''}
+              <div class="text-xs font-mono text-cinder">${k.victimIP} IP</div>
+            </div>
+            ${gearGridHtml(k.victimEq)}
+          </div>
+        </div>
+      `).join('') || `<div class="war-card p-8 text-center text-xs text-cinder">No kills loaded for ${REGION_LABELS[state.server]}. Click <strong>Refresh now</strong> above.</div>`;
+
+      document.querySelectorAll('[data-kb-event]').forEach(btn => {
+        btn.addEventListener('click', () => openKillEventModal(btn.dataset.kbEvent));
+      });
+    }
+
+    function openKillEventModal(eventId) {
+      const k = (state.killsByServer[state.server] || []).find(x => String(x.id) === String(eventId));
+      if (!k) return;
+      document.getElementById('kb-modal-title').textContent = `${k.killer} killed ${k.victim} (#${k.id})`;
+      document.getElementById('kb-modal-time').textContent = `${k.timestamp ? new Date(k.timestamp).toUTCString() : k.time} · ${REGION_LABELS[state.server]}`;
+      const participants = k.participants || [];
+      document.getElementById('kb-modal-body').innerHTML = `
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="war-card-elev p-3 space-y-2">
+            <div class="font-bold text-ember-400">Killer: ${esc(k.killer)} (${k.killerIP} IP)</div>
+            <div class="text-cinder">${esc(k.killerGuild || 'No Guild')} ${k.killerAlliance ? `[${esc(k.killerAlliance)}]` : ''}</div>
+            ${gearGridHtml(k.killerEq)}
+          </div>
+          <div class="war-card-elev p-3 space-y-2">
+            <div class="font-bold text-exec">Victim: ${esc(k.victim)} (${k.victimIP} IP)</div>
+            <div class="text-cinder">${esc(k.victimGuild || 'No Guild')} ${k.victimAlliance ? `[${esc(k.victimAlliance)}]` : ''}</div>
+            ${gearGridHtml(k.victimEq)}
+          </div>
+        </div>
+        <div>
+          <div class="font-semibold text-bone mb-2">Participants (${participants.length || 1}) · Total Kill Fame: <span class="text-ember-400 font-mono">${fmtK(k.fame)}</span></div>
+          ${participants.length ? `<div class="space-y-1.5">${participants.map(p => `
+            <div class="war-card-elev p-2 flex justify-between items-center font-mono">
+              <span class="font-sans text-bone">${esc(p.Name)} <span class="text-cinder">${esc(p.GuildName || '')}</span></span>
+              <span class="text-ember-400">${Math.round(p.DamageDone || 0).toLocaleString()} DMG</span>
+            </div>`).join('')}</div>` : '<div class="text-cinder">Solo engagement or summary-only record.</div>'}
+        </div>
+      `;
+      document.getElementById('kb-event-modal').classList.remove('hidden');
+      if (window.lucide) lucide.createIcons();
+    }
+    document.getElementById('kb-modal-close').addEventListener('click', () => document.getElementById('kb-event-modal').classList.add('hidden'));
+    document.getElementById('kb-event-modal').addEventListener('click', e => { if (e.target.id === 'kb-event-modal') e.target.classList.add('hidden'); });
+    document.getElementById('build-modal').addEventListener('click', e => { if (e.target.id === 'build-modal') e.target.classList.add('hidden'); });
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape') {
+        document.getElementById('kb-event-modal').classList.add('hidden');
+        document.getElementById('build-modal').classList.add('hidden');
+      }
+    });
+
+    function extractBuildsFromEvents(events, srv) {
+      if (!Array.isArray(events) || !events.length) return;
+      const existing = new Set(state.builds.map(b => b.id));
+      const newBuilds = [];
+      events.forEach(ev => {
+        const eq = ev.killerEq || {};
+        const mh = eq.MainHand?.Type;
+        if (!mh) return;
+        const sig = `api_${srv}_${mh}_${eq.Head?.Type || ''}_${eq.Armor?.Type || ''}_${eq.Shoes?.Type || ''}`;
+        if (existing.has(sig)) return;
+        existing.add(sig);
+        const niceName = mh.replace(/^T\d+_/, '').replace(/@\d+$/, '').replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
+        const mode = ev.size === '1v1' ? 'Mists Solo' : ev.size === 'zvz' ? 'ZvZ' : 'Small Scale';
+        newBuilds.push({
+          id: sig,
+          title: `${niceName} (${ev.killerIP || 'Live'} IP)`,
+          mode,
+          role: 'Albion API Live',
+          author: ev.killer || 'Outlands Player',
+          votes: 1,
+          weapon: mh,
+          head: eq.Head?.Type || 'T8_HEAD_LEATHER_SET3',
+          armor: eq.Armor?.Type || 'T8_ARMOR_LEATHER_HELL',
+          shoes: eq.Shoes?.Type || 'T8_SHOES_CLOTH_SET2',
+          cape: eq.Cape?.Type || 'T8_CAPEITEM_FW_MARTLOCK',
+          food: eq.Food?.Type || 'T7_MEAL_OMELETTE',
+          notes: `Auto-fetched from ${REGION_SHORT[srv]} Albion API kill (${fmtK(ev.fame)}).`
+        });
+      });
+      if (newBuilds.length) {
+        state.builds = [...newBuilds.slice(0, 12), ...state.builds].slice(0, 60);
+        Store.set('wh_builds_v2', state.builds);
+        renderBuilds();
+        renderDashboard();
+      }
+    }
+
+    function mapGameinfoEvents(list) {
+      return list.map(ev => {
+        const pCount = Number(ev.numberOfParticipants || ev.Participants?.length || 1);
+        const size = pCount <= 1 ? '1v1' : pCount <= 2 ? '2v2' : pCount <= 5 ? '5v5' : 'zvz';
+        const kEq = ev.Killer?.Equipment || { MainHand: { Type: ev.Killer?.Equipment?.MainHand?.Type || 'T8_2H_AXE' } };
+        const vEq = ev.Victim?.Equipment || { MainHand: { Type: ev.Victim?.Equipment?.MainHand?.Type || 'T8_MAIN_SWORD' } };
+        return {
+          id: ev.EventId || ev.id || Math.random(),
+          timestamp: ev.TimeStamp || ev.timeStamp || '',
+          time: ((ev.TimeStamp || ev.timeStamp || '').replace('T', ' ').slice(11, 19) || 'LIVE') + ' UTC',
+          size,
+          killer: ev.Killer?.Name || 'Unknown',
+          killerGuild: ev.Killer?.GuildName || '',
+          killerAlliance: ev.Killer?.AllianceName || '',
+          killerIP: Math.round(ev.Killer?.AverageItemPower || 0),
+          killerWeapon: kEq.MainHand?.Type || 'T8_2H_AXE',
+          killerEq: kEq,
+          victim: ev.Victim?.Name || 'Unknown',
+          victimGuild: ev.Victim?.GuildName || '',
+          victimAlliance: ev.Victim?.AllianceName || '',
+          victimIP: Math.round(ev.Victim?.AverageItemPower || 0),
+          victimWeapon: vEq.MainHand?.Type || 'T8_MAIN_SWORD',
+          victimEq: vEq,
+          fame: Number(ev.TotalVictimKillFame || 0),
+          participants: ev.Participants || []
+        };
+      });
+    }
+
+    async function fetchLiveKills(srv = state.server) {
+      const kbStatus = document.getElementById('kb-status-bar');
+      if (kbStatus && srv === state.server) kbStatus.textContent = `Fetching live ${REGION_LABELS[srv]} kill events...`;
+      try {
+        let mapped = [];
+        let sourceLabel = 'Gameinfo Live';
+        try {
+          const rows = await fetchGameinfoResilient('/events?limit=25&offset=0', srv);
+          const list = Array.isArray(rows) ? rows : (rows?.events || rows?.data || []);
+          if (list.length) mapped = mapGameinfoEvents(list);
+        } catch {}
+
+        // Tier 2 Fallback: AlbionBB CORS-native live battles
+        if (!mapped.length) {
+          sourceLabel = 'AlbionBB Live Engagements';
+          const bb = await fetchWithTimeout(`${ALBIONBB_HOSTS[srv]}/battles?minPlayers=2`, 7500);
+          const battles = Array.isArray(bb) ? bb : (bb?.battles || bb?.data || []);
+          battles.slice(0, 12).forEach(b => {
+            const players = Array.isArray(b.players) ? b.players : Object.values(b.players || {});
+            const killers = [...players].filter(p => Number(p.kills || 0) > 0).sort((a, b2) => (b2.killFame || 0) - (a.killFame || 0));
+            const victims = [...players].filter(p => Number(p.deaths || 0) > 0).sort((a, b2) => (b2.deaths || 0) - (a.deaths || 0));
+            const pairs = Math.min(2, killers.length, victims.length);
+            for (let i = 0; i < pairs; i++) {
+              const k = killers[i], v = victims[i];
+              if (!k || !v || k.name === v.name) continue;
+              const pCount = Number(b.totalPlayers || players.length || 2);
+              mapped.push({
+                id: `${b.albionId || b.id}_${i}`,
+                timestamp: b.startedAt || b.startTime || '',
+                time: ((b.startedAt || b.startTime || '').replace('T', ' ').slice(11, 19) || 'LIVE') + ' UTC',
+                size: pCount <= 2 ? '2v2' : pCount <= 5 ? '5v5' : 'zvz',
+                killer: k.name || 'Unknown',
+                killerGuild: k.guildName || k.guild || '',
+                killerAlliance: k.allianceName || '',
+                killerIP: Math.round(k.averageItemPower || 0),
+                killerWeapon: k.weapon || 'T8_2H_AXE_AVALON',
+                killerEq: { MainHand: { Type: k.weapon || 'T8_2H_AXE_AVALON' } },
+                victim: v.name || 'Unknown',
+                victimGuild: v.guildName || v.guild || '',
+                victimAlliance: v.allianceName || '',
+                victimIP: Math.round(v.averageItemPower || 0),
+                victimWeapon: v.weapon || 'T8_MAIN_SWORD',
+                victimEq: { MainHand: { Type: v.weapon || 'T8_MAIN_SWORD' } },
+                fame: Math.round((k.killFame || b.totalFame || 0) / Math.max(1, k.kills || 1)),
+                participants: []
+              });
+            }
+          });
+        }
+
+        if (!mapped.length) throw new Error('No live kill events returned');
+        state.killsByServer[srv] = mapped;
+        extractBuildsFromEvents(mapped, srv);
+        if (srv === state.server) {
+          if (kbStatus) kbStatus.textContent = `Loaded ${mapped.length} live kills via ${sourceLabel} (${REGION_LABELS[srv]}) at ${new Date().toLocaleTimeString()}.`;
+          renderKillboard();
+          renderDashboard();
+        }
+        toast(`Loaded ${mapped.length} live kills (${REGION_SHORT[srv]})`, 'ok');
+      } catch (e) {
+        if (kbStatus && srv === state.server) kbStatus.textContent = `Live kill feed unavailable (${e.message}). Import a Gameinfo /events JSON file or retry.`;
+        toast(`Live kill feed unavailable (${e.message})`, 'err');
+      }
+    }
+
+    let kbAutoTimer = null;
+    function startKbAutoRefresh() {
+      clearInterval(kbAutoTimer);
+      if (document.getElementById('kb-autorefresh').checked) {
+        kbAutoTimer = setInterval(() => fetchLiveKills(state.server), 15000);
+      }
+    }
+    document.getElementById('kb-autorefresh').addEventListener('change', startKbAutoRefresh);
+    document.getElementById('kb-search').addEventListener('input', renderKillboard);
+    document.getElementById('kb-size').addEventListener('change', renderKillboard);
+    document.getElementById('kb-weapon').addEventListener('input', renderKillboard);
+    document.getElementById('kb-weapon-clear').addEventListener('click', () => {
+      document.getElementById('kb-weapon').value = '';
+      renderKillboard();
+    });
+    document.getElementById('kb-refresh').addEventListener('click', () => fetchLiveKills(state.server));
+    document.getElementById('kb-json-import').addEventListener('change', e => {
+      const f = e.target.files[0]; if (!f) return;
+      const r = new FileReader();
+      r.onload = () => {
+        try {
+          const j = JSON.parse(r.result);
+          const list = Array.isArray(j) ? j : (j.events || j.data || [j]);
+          state.killsByServer[state.server] = mapGameinfoEvents(list);
+          document.getElementById('kb-status-bar').textContent = `Imported ${state.killsByServer[state.server].length} kill events from ${f.name}.`;
+          renderKillboard(); renderDashboard();
+          toast(`Imported ${state.killsByServer[state.server].length} kills`, 'ok');
+        } catch { toast('Invalid killboard JSON file', 'err'); }
+      };
+      r.readAsText(f);
+    });
+
+    // ==================== 10. BUILDS DIRECTORY (STARTS BLANK) ====================
+    function renderBuilds() {
+      const q = (document.getElementById('build-search').value || '').toLowerCase().trim();
+      const rows = state.builds.filter(b => {
+        if (state.buildFilter !== 'all' && b.mode !== state.buildFilter) return false;
+        if (!q) return true;
+        return `${b.title} ${b.mode} ${b.role} ${b.weapon} ${b.notes}`.toLowerCase().includes(q);
+      }).sort((a, b) => b.votes - a.votes);
+
+      document.getElementById('builds-grid').innerHTML = rows.map(b => `
+        <div class="war-card p-4 flex flex-col justify-between gap-3">
+          <div>
+            <div class="flex items-start justify-between gap-2">
+              <div>
+                <span class="badge-hot">${esc(b.mode)}</span>
+                <span class="badge-new ml-1">${esc(b.role)}</span>
+                <h3 class="font-display text-lg font-bold mt-1.5">${esc(b.title)}</h3>
+              </div>
+              <button type="button" data-upvote="${esc(b.id)}" class="btn-ghost font-mono text-xs flex items-center gap-1">
+                <i data-lucide="arrow-up" class="w-3.5 h-3.5 text-ember-400"></i>${b.votes}
+              </button>
+            </div>
+            <div class="grid grid-cols-6 gap-1.5 my-3">
+              ${[b.weapon, b.head, b.armor, b.shoes, b.cape, b.food].map(id => `
+                <div class="gear-slot w-full h-11" title="${esc(id)}">${imgTag(id, 2)}</div>
+              `).join('')}
+            </div>
+            <p class="text-xs text-cinder">${esc(b.notes)}</p>
+          </div>
+          <div class="text-[11px] text-cinder font-mono pt-2 border-t border-rim flex justify-between">
+            <span>By ${esc(b.author)}</span>
+            <button type="button" data-del-build="${esc(b.id)}" class="text-cinder hover:text-crimson-500">Delete</button>
+          </div>
+        </div>
+      `).join('') || '<div class="war-card p-8 col-span-full text-center text-xs text-cinder">No builds created yet. Click <strong>Create Build</strong> above to add your first Albion loadout.</div>';
+      if (window.lucide) lucide.createIcons();
+      document.querySelectorAll('[data-upvote]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const item = state.builds.find(x => x.id === btn.dataset.upvote);
+          if (item) { item.votes++; Store.set('wh_builds_v2', state.builds); renderBuilds(); renderDashboard(); }
+        });
+      });
+      document.querySelectorAll('[data-del-build]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          state.builds = state.builds.filter(x => x.id !== btn.dataset.delBuild);
+          Store.set('wh_builds_v2', state.builds); renderBuilds(); renderDashboard();
+        });
+      });
+    }
+
+    document.querySelectorAll('.bfilter-chip').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.bfilter-chip').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        state.buildFilter = btn.dataset.bfilter;
+        renderBuilds();
+      });
+    });
+    document.getElementById('build-search').addEventListener('input', renderBuilds);
+    document.getElementById('open-build-modal').addEventListener('click', () => document.getElementById('build-modal').classList.remove('hidden'));
+    ['close-build-modal', 'cancel-build-modal'].forEach(id => document.getElementById(id).addEventListener('click', () => document.getElementById('build-modal').classList.add('hidden')));
+    document.getElementById('save-build-btn').addEventListener('click', () => {
+      const title = document.getElementById('nb-title').value.trim();
+      if (!title) return toast('Enter a build title first', 'err');
+      state.builds.unshift({
+        id: 'b_' + Date.now(),
+        title,
+        mode: document.getElementById('nb-mode').value,
+        role: document.getElementById('nb-role').value,
+        author: 'You',
+        votes: 1,
+        weapon: document.getElementById('nb-weapon').value.trim() || 'T8_2H_AXE_AVALON',
+        head: document.getElementById('nb-head').value.trim() || 'T8_HEAD_PLATE_SET3',
+        armor: document.getElementById('nb-armor').value.trim() || 'T8_ARMOR_LEATHER_HELL',
+        shoes: document.getElementById('nb-shoes').value.trim() || 'T8_SHOES_CLOTH_SET2',
+        cape: document.getElementById('nb-cape').value.trim() || 'T8_CAPEITEM_FW_MARTLOCK',
+        food: document.getElementById('nb-food').value.trim() || 'T7_MEAL_OMELETTE',
+        notes: document.getElementById('nb-notes').value.trim() || 'Custom Outlands loadout.'
+      });
+      Store.set('wh_builds_v2', state.builds);
+      ['nb-title', 'nb-weapon', 'nb-head', 'nb-armor', 'nb-shoes', 'nb-cape', 'nb-food', 'nb-notes'].forEach(id => {
+        document.getElementById(id).value = '';
+      });
+      document.getElementById('build-modal').classList.add('hidden');
+      renderBuilds(); renderDashboard();
+      toast('Build saved!', 'ok');
+    });
+
+    // ==================== 11. PLAYERS & GUILDS + RANKINGS (START BLANK) ====================
+    document.getElementById('explore-search-btn').addEventListener('click', async () => {
+      const q = document.getElementById('explore-query').value.trim();
+      const box = document.getElementById('explore-search-results');
+      if (!q) return toast('Enter a player or guild name', 'err');
+      box.className = 'war-card p-4 space-y-3 text-left';
+      box.innerHTML = `<div class="text-xs text-cinder font-mono">Searching "${esc(q)}" on ${REGION_LABELS[state.server]}...</div>`;
+      try {
+        const res = await fetchGameinfoResilient(`/search?q=${encodeURIComponent(q)}`, state.server);
+        const players = (res.players || []).slice(0, 10);
+        const guilds = (res.guilds || []).slice(0, 8);
+        box.innerHTML = `
+          <div class="text-xs font-bold text-ember-400">Results for "${esc(q)}" (${REGION_LABELS[state.server]})</div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+            <div class="space-y-1.5"><div class="text-cinder font-semibold">Players (${players.length})</div>${players.map(p => `<div class="war-card-elev p-2.5 flex justify-between"><span>${esc(p.Name)}</span><span class="text-cinder">${esc(p.GuildName || 'No Guild')} · ${fmt(p.KillFame)} KF</span></div>`).join('') || '<div class="text-cinder">No players found</div>'}</div>
+            <div class="space-y-1.5"><div class="text-cinder font-semibold">Guilds (${guilds.length})</div>${guilds.map(g => `<div class="war-card-elev p-2.5 flex justify-between"><span>${esc(g.Name)}</span><span class="text-ember-400">${fmt(g.KillFame)} KF</span></div>`).join('') || '<div class="text-cinder">No guilds found</div>'}</div>
+          </div>`;
+      } catch (e) {
+        box.innerHTML = `<div class="text-xs text-cinder">Live search unavailable (${esc(e.message)}).</div>`;
+      }
+    });
+
+    function renderRankings() {
+      const battles = state.battlesByServer[state.server] || [];
+      const container = document.getElementById('rankings-content');
+      if (!battles.length) {
+        container.innerHTML = `<div class="war-card p-8 col-span-full text-center text-xs text-cinder">No ranking data loaded for ${REGION_LABELS[state.server]} yet. Click <strong>Load Live Rankings</strong> above.</div>`;
+        return;
+      }
+      const pin = (document.getElementById('rank-pin-input').value || '').toLowerCase().trim();
+      const map = new Map();
+      battles.forEach(b => {
+        b.players.forEach(p => {
+          const key = state.rankTab === 'players' ? p.name : state.rankTab === 'guilds' ? p.guild : (p.alliance || 'No Alliance');
+          if (!key || key === '-') return;
+          const prev = map.get(key) || { name: key, sub: state.rankTab === 'players' ? p.guild : REGION_SHORT[state.server], kills: 0, fame: 0 };
+          prev.kills += p.kills;
+          prev.fame += p.killFame;
+          map.set(key, prev);
+        });
+      });
+      const all = [...map.values()];
+      const byKills = [...all].sort((a, b) => b.kills - a.kills).slice(0, 10);
+      const byFame = [...all].sort((a, b) => b.fame - a.fame).slice(0, 10);
+      const drawCol = (title, arr, fmtVal) => {
+        const sorted = pin ? [...arr].sort((a, b) => (b.name.toLowerCase().includes(pin) ? 1 : 0) - (a.name.toLowerCase().includes(pin) ? 1 : 0)) : arr;
+        return `<div class="war-card p-4 space-y-2"><h3 class="font-display text-lg font-bold text-ember-400">${title}</h3>${sorted.map((r, i) => `
+          <div class="p-2.5 rounded-lg flex items-center justify-between text-xs ${pin && r.name.toLowerCase().includes(pin) ? 'bg-crimson-950/50 border border-crimson-600' : 'bg-forge border border-rim'}">
+            <div class="flex items-center gap-2.5"><span class="font-mono text-cinder w-5">#${i + 1}</span><div><div class="font-semibold text-bone">${esc(r.name)}</div><div class="text-cinder">${esc(r.sub)}</div></div></div>
+            <span class="font-mono font-bold text-ember-400">${fmtVal(r)}</span>
+          </div>`).join('')}</div>`;
+      };
+      container.innerHTML = drawCol('Most Kills', byKills, r => `${r.kills} Kills`) + drawCol('Highest Kill Fame', byFame, r => `${fmt(r.fame)} Fame`);
+    }
+    document.querySelectorAll('.rtab-btn').forEach(btn => btn.addEventListener('click', () => {
+      document.querySelectorAll('.rtab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active'); state.rankTab = btn.dataset.rtab; renderRankings();
+    }));
+    document.getElementById('rank-pin-input').addEventListener('input', renderRankings);
+    document.getElementById('rank-fetch-btn').addEventListener('click', () => fetchLiveBattles(state.server));
+
+    // ==================== 12. BANDIT ASSAULT TRACKER (HH:MM:SS) ====================
+    function renderBandit() {
+      const servers = [
+        { key: 'west', name: 'Americas (NA)', prob: '68%', daily: '4.2 / day', state: 'WAITING' },
+        { key: 'europe', name: 'Europe (EU)', prob: '74%', daily: '4.5 / day', state: 'WAITING' },
+        { key: 'east', name: 'Asia (AS)', prob: '61%', daily: '4.0 / day', state: 'WAITING' }
+      ];
+      document.getElementById('bandit-cards').innerHTML = servers.map(s => `
+        <div class="war-card p-4 space-y-2">
+          <div class="flex justify-between items-center"><span class="font-display text-lg font-bold">${s.name}</span><span class="badge-new">${s.state}</span></div>
+          <div id="bandit-hms-${s.key}" class="font-mono text-3xl font-bold text-ember-400 tabular">${formatHMS(banditRemainingSec(s.key))}</div>
+          <div class="text-[11px] text-cinder font-mono">Format: hh:mm:ss until next roll window</div>
+          <div class="grid grid-cols-2 gap-2 text-xs text-cinder pt-2 border-t border-rim font-mono">
+            <div>Trigger Chance: <strong class="text-bone">${s.prob}</strong></div>
+            <div>Expected: <strong class="text-jade">${s.daily}</strong></div>
+          </div>
+        </div>
+      `).join('');
+
+      const now = Date.now();
+      const base = Math.ceil(now / (4 * 3600 * 1000)) * (4 * 3600 * 1000);
+      const rows = [];
+      for (let i = 0; i < 6; i++) {
+        const t = new Date(base + i * 4 * 3600 * 1000);
+        rows.push(`<tr>
+          <td class="py-2 text-cinder">#${i + 1}</td>
+          <td class="py-2 text-bone">${t.toISOString().slice(11, 19)} UTC</td>
+          <td class="py-2 text-ember-400">${t.toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })}</td>
+          <td class="py-2 text-jade">${65 + (i % 3) * 8}%</td>
+          <td class="py-2">${i === 0 ? '<span class="badge-hot">NEXT ROLL</span>' : '<span class="text-cinder">Scheduled</span>'}</td>
+        </tr>`);
+      }
+      document.getElementById('bandit-schedule-body').innerHTML = rows.join('');
+    }
+
+    // ==================== 13. LOOT SPLIT & CSV LOOT LOGGER (STARTS BLANK) ====================
+    function computeLootSplit() {
+      const name = document.getElementById('ls-name').value.trim();
+      const poster = document.getElementById('ls-poster').value.trim();
+      const players = Math.max(0, Number(document.getElementById('ls-players').value) || 0);
+      const tabEst = Math.max(0, Number(document.getElementById('ls-tab').value) || 0);
+      const bags = Math.max(0, Number(document.getElementById('ls-bags').value) || 0) * 10000;
+      const repairs = Math.max(0, Number(document.getElementById('ls-repairs').value) || 0);
+      const guildTaxPct = Math.max(0, Math.min(50, Number(document.getElementById('ls-guild-tax').value) || 0));
+      const buyerTaxPct = Math.max(0, Math.min(40, Number(document.getElementById('ls-buyer-tax').value) || 0));
+
+      const buyerDeduction = Math.round(tabEst * (buyerTaxPct / 100));
+      const grossAfterBuyer = tabEst - buyerDeduction + bags;
+      const guildTax = Math.round(grossAfterBuyer * (guildTaxPct / 100));
+      const netPool = Math.max(0, grossAfterBuyer - guildTax - repairs);
+      const perPlayer = players > 0 ? Math.floor(netPool / players) : 0;
+      return { name, poster, players, tabEst, bags, repairs, buyerDeduction, guildTax, netPool, perPlayer };
+    }
+
+    function renderLootSplit() {
+      const r = computeLootSplit();
+      if (!r.tabEst && !r.bags && !r.players) {
+        document.getElementById('ls-receipt').innerHTML = '<div class="text-cinder text-center py-4">Enter loot values or import a CSV to generate a Loot Split Receipt.</div>';
+        return;
+      }
+      document.getElementById('ls-receipt').innerHTML = `
+        <div class="text-ember-400 font-bold text-sm border-b border-rim pb-1.5">${esc(r.name || 'Loot Split')} ${r.poster ? `· by ${esc(r.poster)}` : ''}</div>
+        <div class="flex justify-between"><span class="text-cinder">Tab Estimate + Silver Bags:</span><span>${fmt(r.tabEst + r.bags)}s</span></div>
+        <div class="flex justify-between"><span class="text-cinder">Buyer Fee / Discount:</span><span class="text-exec">-${fmt(r.buyerDeduction)}s</span></div>
+        <div class="flex justify-between"><span class="text-cinder">Guild Tax Share:</span><span class="text-exec">-${fmt(r.guildTax)}s</span></div>
+        <div class="flex justify-between"><span class="text-cinder">Repair Reimbursement:</span><span class="text-exec">-${fmt(r.repairs)}s</span></div>
+        <div class="flex justify-between border-t border-rim pt-2 text-sm font-bold"><span class="text-bone">Net Split Pool:</span><span class="text-ember-400">${fmt(r.netPool)}s</span></div>
+        <div class="flex justify-between text-base font-bold"><span class="text-jade">Each Player (${r.players}):</span><span class="text-jade">${fmt(r.perPlayer)}s</span></div>
+      `;
+    }
+
+    function parseLootCsv(text) {
+      const clean = text.replace(/^\uFEFF/, '').trim();
+      const lines = clean.split(/\r?\n/);
+      if (lines.length < 2) return [];
+      const delim = lines[0].includes(';') ? ';' : ',';
+      const headers = lines[0].split(delim).map(h => h.trim().toLowerCase());
+      return lines.slice(1).map(line => {
+        const cols = line.split(delim);
+        const obj = {};
+        headers.forEach((h, i) => obj[h] = (cols[i] || '').trim());
+        return obj;
+      }).filter(r => r.item_id || r.item_name);
+    }
+
+    function renderLootTable() {
+      const q = (document.getElementById('loot-filter-input').value || '').toLowerCase().trim();
+      const rows = state.lootRows.filter(r => !q || JSON.stringify(r).toLowerCase().includes(q));
+      const total = rows.reduce((acc, r) => acc + (Number(r.quantity || 1) * Number(r.average_est_market_value || 0)), 0);
+      document.getElementById('loot-total-badge').textContent = `${fmt(total)}s (${rows.length})`;
+      document.getElementById('loot-table-body').innerHTML = rows.map(r => {
+        const val = Number(r.quantity || 1) * Number(r.average_est_market_value || 0);
+        return `<tr>
+          <td class="py-2 pr-2 flex items-center gap-2">
+            ${imgTag(r.item_id, r.quality, r.enchantment, 'w-7 h-7 object-contain bg-ash rounded border border-rim shrink-0')}
+            <span class="text-bone font-medium truncate max-w-[160px]">${esc(r.item_name || r.item_id)}</span>
+          </td>
+          <td class="py-2 pr-2 text-jade">${esc(r.looted_by__name || '-')} <span class="text-cinder text-[10px]">${esc(r.looted_by__guild || '')}</span></td>
+          <td class="py-2 pr-2 text-exec">${esc(r.looted_from__name || '-')}</td>
+          <td class="py-2 pr-2 text-right font-mono">${esc(r.quantity || 1)}</td>
+          <td class="py-2 text-right font-mono text-ember-400">${fmt(val)}s</td>
+        </tr>`;
+      }).join('') || '<tr><td colspan="5" class="py-8 text-center text-cinder">No CSV loaded. Click <strong>Import Loot CSV</strong> to inspect raid drops.</td></tr>';
+    }
+
+    ['ls-name', 'ls-poster', 'ls-players', 'ls-tab', 'ls-bags', 'ls-repairs', 'ls-guild-tax', 'ls-buyer-tax'].forEach(id => {
+      document.getElementById(id).addEventListener('input', renderLootSplit);
+    });
+    document.getElementById('ls-copy-btn').addEventListener('click', () => {
+      const r = computeLootSplit();
+      if (!r.netPool) return toast('Enter loot split numbers first', 'err');
+      copyText(`**${r.name || 'Loot Split'}**\nNet Pool: ${r.netPool.toLocaleString()}s | Players: ${r.players}\n**Payout / Player: ${r.perPlayer.toLocaleString()}s**`);
+    });
+    document.getElementById('ls-download-btn').addEventListener('click', () => {
+      const r = computeLootSplit();
+      if (!r.netPool) return toast('Enter loot split numbers first', 'err');
+      const c = document.createElement('canvas'); c.width = 560; c.height = 300;
+      const ctx = c.getContext('2d');
+      ctx.fillStyle = '#0D0B0C'; ctx.fillRect(0, 0, 560, 300);
+      ctx.strokeStyle = '#DC2626'; ctx.lineWidth = 3; ctx.strokeRect(10, 10, 540, 280);
+      ctx.fillStyle = '#F59E0B'; ctx.font = 'bold 22px sans-serif'; ctx.fillText(`ALBION LOOT SPLIT — ${r.name || 'RAID'}`, 28, 52);
+      ctx.fillStyle = '#F8F4F2'; ctx.font = '16px monospace';
+      ctx.fillText(`Caller: ${r.poster || '-'}   |   Players: ${r.players}`, 28, 92);
+      ctx.fillText(`Gross + Bags: ${(r.tabEst + r.bags).toLocaleString()}s`, 28, 128);
+      ctx.fillText(`Taxes & Repairs: -${(r.buyerDeduction + r.guildTax + r.repairs).toLocaleString()}s`, 28, 160);
+      ctx.fillStyle = '#10B981'; ctx.font = 'bold 24px monospace';
+      ctx.fillText(`PER PLAYER: ${r.perPlayer.toLocaleString()} SILVER`, 28, 224);
+      const a = document.createElement('a'); a.download = 'loot-split-receipt.png'; a.href = c.toDataURL('image/png'); a.click();
+      toast('Receipt PNG downloaded!', 'ok');
+    });
+    document.getElementById('loot-csv-file').addEventListener('change', e => {
+      const f = e.target.files[0]; if (!f) return;
+      const r = new FileReader();
+      r.onload = () => { state.lootRows = parseLootCsv(r.result); renderLootTable(); renderDashboard(); toast(`Loaded ${state.lootRows.length} CSV rows`, 'ok'); };
+      r.readAsText(f);
+    });
+    document.getElementById('loot-filter-input').addEventListener('input', renderLootTable);
+    document.getElementById('loot-send-to-split').addEventListener('click', () => {
+      const total = state.lootRows.reduce((acc, r) => acc + (Number(r.quantity || 1) * Number(r.average_est_market_value || 0)), 0);
+      if (total <= 0) return toast('Import a Loot CSV first', 'err');
+      document.getElementById('ls-tab').value = total;
+      renderLootSplit();
+      toast(`Pushed ${fmt(total)}s from CSV into Loot Split!`, 'ok');
+    });
+    document.getElementById('loot-clear-btn').addEventListener('click', () => {
+      state.lootRows = [];
+      ['ls-name', 'ls-poster', 'ls-players', 'ls-tab', 'ls-bags', 'ls-repairs', 'ls-guild-tax', 'ls-buyer-tax', 'loot-filter-input'].forEach(id => document.getElementById(id).value = '');
+      renderLootTable(); renderLootSplit(); renderDashboard();
+    });
+
+    // ==================== 14. AVALON MAPS (STARTS BLANK UNTIL SEARCH/FILTER) ====================
+    function renderAvalon() {
+      const q = (document.getElementById('ava-search').value || '').toLowerCase().trim();
+      const tier = document.getElementById('ava-tier').value;
+      const lay = document.getElementById('ava-layout').value;
+      const hoOnly = document.getElementById('ava-ho-only').checked;
+      const goldOnly = document.getElementById('ava-gold-only').checked;
+
+      if (!q && !tier && !lay && !hoOnly && !goldOnly) {
+        document.getElementById('ava-count').textContent = '0 zones shown';
+        document.getElementById('avalon-grid').innerHTML = '<div class="war-card p-8 col-span-full text-center text-xs text-cinder">Search an Avalon zone name/resource or select a Tier/Layout filter above to view matching Roads of Avalon regions.</div>';
+        return;
+      }
+
+      const list = AVALON_ZONES.filter(z => {
+        if (tier && tier !== 'all' && String(z.tier) !== tier) return false;
+        if (lay && lay !== 'all' && z.layout !== lay) return false;
+        if (hoOnly && !z.ho) return false;
+        if (goldOnly && z.gold === 0) return false;
+        return !q || z.name.toLowerCase().includes(q) || z.resources.join(' ').toLowerCase().includes(q);
+      });
+      document.getElementById('ava-count').textContent = `${list.length} zones shown`;
+      document.getElementById('avalon-grid').innerHTML = list.map(z => `
+        <div class="war-card p-4 space-y-2.5">
+          <div class="flex justify-between items-center">
+            <h3 class="font-display text-lg font-bold text-bone">${esc(z.name)}</h3>
+            <div class="flex gap-1">
+              <span class="badge-hot font-mono">T${z.tier}</span>
+              <span class="badge-new font-mono">${z.layout}</span>
+              ${z.ho ? '<span class="badge-live">HO</span>' : ''}
+            </div>
+          </div>
+          <div class="flex gap-3 text-xs font-mono">
+            <span class="text-jade">Green: ${z.green}</span>
+            <span class="text-sky-400">Blue: ${z.blue}</span>
+            <span class="text-ember-400">Gold: ${z.gold}</span>
+          </div>
+          <div class="text-xs text-cinder">Resources: <span class="text-bone">${z.resources.join(', ')}</span></div>
+          <div class="text-xs text-cinder">Dungeons: <span class="text-ember-400">${esc(z.dungeons)}</span></div>
+        </div>
+      `).join('') || '<div class="war-card p-8 col-span-full text-center text-xs text-cinder">No Avalon zones match your filter.</div>';
+    }
+    ['ava-search', 'ava-tier', 'ava-layout', 'ava-ho-only', 'ava-gold-only'].forEach(id => document.getElementById(id).addEventListener('input', renderAvalon));
+    document.getElementById('ava-reset-btn').addEventListener('click', () => {
+      document.getElementById('ava-search').value = '';
+      document.getElementById('ava-tier').value = '';
+      document.getElementById('ava-layout').value = '';
+      document.getElementById('ava-ho-only').checked = false;
+      document.getElementById('ava-gold-only').checked = false;
+      renderAvalon();
+    });
+
+    // ==================== 15. CRAFTING & REFINING (SEARCH BAR + BONUS CITY + DAILY BONUS, STARTS BLANK) ====================
+    function initCraftingCities() {
+      const cc = document.getElementById('cr-craft-city');
+      const sc = document.getElementById('cr-sell-city');
+      cc.innerHTML = CITIES.map(c => `<option value="${c}">${c}</option>`).join('');
+      sc.innerHTML = SELL_CITIES.map(c => `<option value="${c}">${c}</option>`).join('');
+      sc.value = 'Caerleon';
+      const bonus = getTodaysDailyBonus();
+      document.getElementById('cr-daily-bonus-desc').textContent = `${bonus.category} — ${bonus.bonus} (Best cities: ${bonus.cities})`;
+    }
+
+    function showRecipeSuggestions(query) {
+      const dd = document.getElementById('cr-recipe-dropdown');
+      const q = (query || '').toLowerCase().trim();
+      const pool = ALL_RECIPES.filter(r => state.craftMode === 'all' || r.mode === state.craftMode);
+      const matches = q ? pool.filter(r => `${r.name} ${r.key} ${r.bonusCity}`.toLowerCase().includes(q)) : pool;
+      if (!matches.length) {
+        dd.innerHTML = '<div class="p-3 text-xs text-cinder">No matching recipes found.</div>';
+      } else {
+        dd.innerHTML = matches.map(r => `
+          <button type="button" data-pick-rec="${r.key}" class="search-opt">
+            <span class="font-semibold text-bone">${esc(r.name)}</span>
+            <span class="text-[11px] font-mono text-ember-400">Bonus: ${esc(r.bonusCity)}</span>
+          </button>
+        `).join('');
+        dd.querySelectorAll('[data-pick-rec]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const rec = ALL_RECIPES.find(x => x.key === btn.dataset.pickRec);
+            if (!rec) return;
+            state.selectedRecipe = rec;
+            document.getElementById('cr-recipe-search').value = rec.name;
+            document.getElementById('cr-clear-recipe').classList.remove('hidden');
+            document.getElementById('cr-craft-city').value = rec.bonusCity;
+            dd.classList.add('hidden');
+            calculateCraft();
+            renderDashboard();
+          });
+        });
+      }
+      dd.classList.remove('hidden');
+    }
+
+    function estUnitPrice(itemId, city) {
+      const cached = state.marketPrices[`${itemId}:${city}`];
+      if (cached > 0) return cached;
+      const tier = Number((itemId.match(/^T(\d+)/) || [])[1] || 6);
+      const ench = Number((itemId.match(/@(\d+)$/) || [])[1] || 0);
+      const cityMod = city === 'Black Market' ? 1.14 : city === 'Caerleon' ? 1.08 : 1.0;
+      const base = itemId.includes('MEAL') ? 2800 : itemId.includes('ORE') || itemId.includes('HIDE') || itemId.includes('FIBER') || itemId.includes('WOOD') ? 380 : itemId.includes('METALBAR') || itemId.includes('CLOTH') || itemId.includes('LEATHER') || itemId.includes('PLANKS') ? 1600 : 18500;
+      return Math.round(base * Math.pow(1.75, tier - 4) * Math.pow(1.85, ench) * cityMod);
+    }
+
+    function calculateCraft() {
+      const rec = state.selectedRecipe;
+      const bonusCard = document.getElementById('cr-bonus-city-card');
+      if (!rec) {
+        bonusCard.classList.add('hidden');
+        document.getElementById('cr-mats-list').innerHTML = '<div class="text-xs text-cinder py-2">Search and select a recipe above to view required materials and bonus crafting city.</div>';
+        document.getElementById('cr-kpi-grid').innerHTML = `
+          <div class="war-card p-3"><div class="text-[11px] text-cinder">Return Rate (RRR)</div><div class="font-mono text-lg font-bold text-cinder">—</div></div>
+          <div class="war-card p-3"><div class="text-[11px] text-cinder">Total Cost</div><div class="font-mono text-lg font-bold text-cinder">—</div></div>
+          <div class="war-card p-3"><div class="text-[11px] text-cinder">Net Profit</div><div class="font-mono text-lg font-bold text-cinder">—</div></div>
+          <div class="war-card p-3"><div class="text-[11px] text-cinder">Profit Margin</div><div class="font-mono text-lg font-bold text-cinder">—</div></div>
+        `;
+        document.getElementById('cr-city-table').innerHTML = '<tr><td colspan="5" class="py-8 text-center text-cinder">Select a recipe to compare per-city sell profits.</td></tr>';
+        return null;
+      }
+
+      bonusCard.classList.remove('hidden');
+      document.getElementById('cr-bonus-city-name').textContent = `${rec.bonusCity} (${rec.bonusDesc})`;
+
+      const tier = rec.fixedTier || Number(document.getElementById('cr-tier').value);
+      const ench = rec.fixedId ? 0 : Number(document.getElementById('cr-enchant').value);
+      const craftCity = document.getElementById('cr-craft-city').value;
+      const sellCity = document.getElementById('cr-sell-city').value;
+      const qty = Math.max(1, Number(document.getElementById('cr-qty').value) || 1);
+      const feePer100 = Math.max(0, Number(document.getElementById('cr-fee').value) || 0);
+      const useFocus = document.getElementById('cr-focus').checked;
+      const premium = document.getElementById('cr-premium').checked;
+      const applyDaily = document.getElementById('cr-apply-daily').checked;
+
+      const hasBonus = craftCity === rec.bonusCity;
+      let rrr = rec.mode === 'refine'
+        ? (hasBonus ? (useFocus ? 0.539 : 0.367) : (useFocus ? 0.435 : 0.152))
+        : (hasBonus ? (useFocus ? 0.479 : 0.248) : (useFocus ? 0.435 : 0.152));
+      if (applyDaily) rrr = Math.min(0.58, rrr + 0.045);
+
+      const outItemId = rec.fixedId || `T${tier}_${rec.idSuffix}${ench > 0 ? '@' + ench : ''}`;
+      let totalMatCost = 0;
+
+      document.getElementById('cr-mats-list').innerHTML = rec.mats.map(m => {
+        const mId = m.itemId || (m.type.startsWith('PREV_') ? `T${Math.max(3, tier - 1)}_${m.type.replace('PREV_', '')}` : `T${tier}_${m.type}${ench > 0 ? '@' + ench : ''}`);
+        const effectiveNeed = Math.ceil(m.qty * qty * (1 - rrr));
+        const owned = Math.min(effectiveNeed, Math.max(0, Number(state.ownedMats[mId] || 0)));
+        const toBuy = Math.max(0, effectiveNeed - owned);
+        const unitP = estUnitPrice(mId, craftCity);
+        const cost = toBuy * unitP;
+        totalMatCost += cost;
+        return `
+          <div class="war-card-elev p-2.5 flex items-center justify-between gap-2 text-xs">
+            <div class="min-w-0">
+              <div class="font-semibold text-bone truncate">${esc(m.label)} <span class="font-mono text-cinder">(${mId})</span></div>
+              <div class="text-cinder font-mono">Need ${effectiveNeed} (Buy ${toBuy}) × ${unitP.toLocaleString()}s</div>
+            </div>
+            <div class="flex items-center gap-1.5 shrink-0">
+              <input type="number" min="0" value="${owned}" data-owned-mat="${mId}" title="Owned qty" class="war-input w-16 py-1 px-1.5 text-right font-mono text-xs">
+              <span class="font-mono text-ember-400 w-20 text-right">${fmt(cost)}s</span>
+            </div>
+          </div>`;
+      }).join('');
+
+      document.querySelectorAll('[data-owned-mat]').forEach(inp => {
+        inp.addEventListener('change', () => { state.ownedMats[inp.dataset.ownedMat] = Number(inp.value) || 0; calculateCraft(); });
+      });
+
+      const stationFee = Math.round(rec.baseItemValue * 0.1125 * (feePer100 / 100) * qty);
+      const totalCost = totalMatCost + stationFee;
+      const taxRate = premium ? 0.065 : 0.105;
+      const totalOut = qty * (rec.outputQty || 1);
+
+      const cityRows = SELL_CITIES.map(c => {
+        const unitSell = estUnitPrice(outItemId, c);
+        const netRev = Math.round(unitSell * totalOut * (1 - taxRate));
+        const profit = netRev - totalCost;
+        const margin = totalCost > 0 ? (profit / totalCost) * 100 : 0;
+        return { city: c, unitSell, netRev, profit, margin };
+      });
+      const selRow = cityRows.find(r => r.city === sellCity) || cityRows[0];
+
+      document.getElementById('cr-kpi-grid').innerHTML = `
+        <div class="war-card p-3"><div class="text-[11px] text-cinder">Return Rate (RRR)</div><div class="font-mono text-lg font-bold text-ember-400">${(rrr * 100).toFixed(1)}%</div><div class="text-[10px] ${hasBonus ? 'text-jade' : 'text-cinder'}">${hasBonus ? `Bonus City (${rec.bonusCity})` : `Best: ${rec.bonusCity}`}</div></div>
+        <div class="war-card p-3"><div class="text-[11px] text-cinder">Total Cost</div><div class="font-mono text-lg font-bold text-bone">${fmt(totalCost)}s</div><div class="text-[10px] text-cinder">Fee: ${fmt(stationFee)}s</div></div>
+        <div class="war-card p-3"><div class="text-[11px] text-cinder">Net Profit (${sellCity})</div><div class="font-mono text-lg font-bold ${selRow.profit >= 0 ? 'text-jade' : 'text-exec'}">${selRow.profit >= 0 ? '+' : ''}${fmt(selRow.profit)}s</div><div class="text-[10px] text-cinder">Output: ${totalOut} units</div></div>
+        <div class="war-card p-3"><div class="text-[11px] text-cinder">Profit Margin</div><div class="font-mono text-lg font-bold ${selRow.margin >= 0 ? 'text-jade' : 'text-exec'}">${selRow.margin.toFixed(1)}%</div><div class="text-[10px] text-cinder">${applyDaily ? '+Daily Bonus' : `Tax ${(taxRate * 100).toFixed(1)}%`}</div></div>
+      `;
+
+      document.getElementById('cr-city-table').innerHTML = cityRows.sort((a, b) => b.profit - a.profit).map(r => `
+        <tr class="${r.city === sellCity ? 'bg-crimson-950/35' : ''}">
+          <td class="py-2 font-sans font-semibold text-bone">${esc(r.city)}</td>
+          <td class="py-2 text-right">${r.unitSell.toLocaleString()}s</td>
+          <td class="py-2 text-right text-cinder">${fmt(r.netRev)}s</td>
+          <td class="py-2 text-right font-bold ${r.profit >= 0 ? 'text-jade' : 'text-exec'}">${r.profit >= 0 ? '+' : ''}${fmt(r.profit)}s</td>
+          <td class="py-2 text-right ${r.margin >= 0 ? 'text-jade' : 'text-exec'}">${r.margin.toFixed(1)}%</td>
+        </tr>
+      `).join('');
+
+      return { name: rec.name, outItemId, qty: totalOut, craftCity, sellCity, profit: selRow.profit };
+    }
+
+    function renderCraftQueue() {
+      const box = document.getElementById('cr-queue-list');
+      if (!state.craftQueue.length) {
+        box.innerHTML = '<div class="text-cinder">Queue is blank. Select a recipe and click "+ Add to Batch Queue".</div>';
+        return;
+      }
+      const tot = state.craftQueue.reduce((a, x) => a + x.profit, 0);
+      box.innerHTML = state.craftQueue.map((q, i) => `
+        <div class="war-card-elev p-2.5 flex items-center justify-between gap-2">
+          <div><strong class="text-bone">${esc(q.name)}</strong> <span class="font-mono text-cinder">(${q.qty}x · ${esc(q.craftCity)} &rarr; ${esc(q.sellCity)})</span></div>
+          <div class="flex items-center gap-2 font-mono"><span class="${q.profit >= 0 ? 'text-jade' : 'text-exec'}">${q.profit >= 0 ? '+' : ''}${fmt(q.profit)}s</span><button type="button" data-del-q="${i}" class="text-cinder hover:text-crimson-500">&times;</button></div>
+        </div>
+      `).join('') + `<div class="pt-2 border-t border-rim flex justify-between font-mono font-bold"><span>Total Batch Profit</span><span class="${tot >= 0 ? 'text-jade' : 'text-exec'}">${tot >= 0 ? '+' : ''}${fmt(tot)}s</span></div>`;
+      document.querySelectorAll('[data-del-q]').forEach(b => b.addEventListener('click', () => {
+        state.craftQueue.splice(Number(b.dataset.delQ), 1);
+        Store.set('wh_craft_queue_v2', state.craftQueue);
+        renderCraftQueue(); renderDashboard();
+      }));
+    }
+
+    const crSearchInput = document.getElementById('cr-recipe-search');
+    crSearchInput.addEventListener('focus', () => showRecipeSuggestions(crSearchInput.value));
+    crSearchInput.addEventListener('input', () => showRecipeSuggestions(crSearchInput.value));
+    document.addEventListener('click', e => {
+      const dd = document.getElementById('cr-recipe-dropdown');
+      if (!dd.contains(e.target) && e.target !== crSearchInput) dd.classList.add('hidden');
+    });
+    document.getElementById('cr-clear-recipe').addEventListener('click', () => {
+      state.selectedRecipe = null;
+      crSearchInput.value = '';
+      document.getElementById('cr-clear-recipe').classList.add('hidden');
+      calculateCraft(); renderDashboard();
+    });
+    document.getElementById('cr-use-bonus-city').addEventListener('click', () => {
+      if (!state.selectedRecipe) return;
+      document.getElementById('cr-craft-city').value = state.selectedRecipe.bonusCity;
+      calculateCraft();
+      toast(`Switched Craft City to ${state.selectedRecipe.bonusCity}`, 'ok');
+    });
+    document.getElementById('dismiss-daily-banner').addEventListener('click', () => {
+      document.getElementById('daily-bonus-banner').classList.add('hidden');
+    });
+    document.querySelectorAll('.cmode-btn').forEach(btn => btn.addEventListener('click', () => {
+      document.querySelectorAll('.cmode-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active'); state.craftMode = btn.dataset.cmode;
+      if (crSearchInput === document.activeElement) showRecipeSuggestions(crSearchInput.value);
+    }));
+    ['cr-tier', 'cr-enchant', 'cr-craft-city', 'cr-sell-city', 'cr-qty', 'cr-fee', 'cr-focus', 'cr-premium', 'cr-apply-daily'].forEach(id => {
+      document.getElementById(id).addEventListener('input', calculateCraft);
+    });
+    document.getElementById('cr-add-queue').addEventListener('click', () => {
+      const snap = calculateCraft();
+      if (!snap) return toast('Search and select a recipe first', 'err');
+      state.craftQueue.push(snap);
+      Store.set('wh_craft_queue_v2', state.craftQueue);
+      renderCraftQueue(); renderDashboard();
+      toast(`Added ${snap.name} to batch queue`, 'ok');
+    });
+    document.getElementById('cr-clear-queue').addEventListener('click', () => {
+      state.craftQueue = []; Store.set('wh_craft_queue_v2', []); renderCraftQueue(); renderDashboard();
+    });
+    document.getElementById('cr-sync-aodp').addEventListener('click', async () => {
+      const snap = calculateCraft();
+      if (!snap) return toast('Select a recipe first', 'err');
+      try {
+        const rows = await fetchWithTimeout(`${AODP_HOSTS[state.server]}/api/v2/stats/prices/${snap.outItemId}.json?locations=${encodeURIComponent(SELL_CITIES.join(','))}`, 7000);
+        let updated = 0;
+        rows.forEach(r => { if (r.sell_price_min > 0) { state.marketPrices[`${r.item_id}:${r.city}`] = r.sell_price_min; updated++; } });
+        calculateCraft();
+        toast(`Synced ${updated} live city quotes from AODP!`, 'ok');
+      } catch (e) { toast(`AODP sync unavailable (${e.message})`, 'err'); }
+    });
+
+    // ==================== 16. MARKET & ALERTS (BLANK SEARCH BAR, STARTS BLANK) ====================
+    function renderAlerts() {
+      document.getElementById('alerts-list').innerHTML = state.alerts.map(a => `
+        <div class="war-card-elev p-2.5 flex items-center justify-between gap-2">
+          <div><div class="font-mono font-bold text-bone">${esc(a.item)}</div><div class="text-cinder">${a.dir === 'below' ? 'Drops below' : 'Rises above'} <span class="text-ember-400 font-mono">${Number(a.target).toLocaleString()}s</span></div></div>
+          <button type="button" data-del-alert="${a.id}" class="text-cinder hover:text-crimson-500 text-sm">&times;</button>
+        </div>
+      `).join('') || '<div class="text-cinder">No alerts added yet.</div>';
+      document.querySelectorAll('[data-del-alert]').forEach(b => b.addEventListener('click', () => {
+        state.alerts = state.alerts.filter(x => x.id !== Number(b.dataset.delAlert));
+        Store.set('wh_alerts_v2', state.alerts); renderAlerts(); renderDashboard();
+      }));
+    }
+    document.getElementById('al-add-btn').addEventListener('click', () => {
+      const item = document.getElementById('al-item-name').value.trim().toUpperCase();
+      const target = Number(document.getElementById('al-price').value);
+      if (!item || !target) return toast('Enter an item ID and target silver', 'err');
+      state.alerts.unshift({ id: Date.now(), item, dir: document.getElementById('al-dir').value, target });
+      Store.set('wh_alerts_v2', state.alerts); renderAlerts(); renderDashboard();
+      document.getElementById('al-item-name').value = ''; document.getElementById('al-price').value = '';
+      toast('Price alert saved!', 'ok');
+    });
+
+    const trInput = document.getElementById('tr-item-search');
+    const trDrop = document.getElementById('tr-item-dropdown');
+    trInput.addEventListener('input', () => {
+      const q = trInput.value.toLowerCase().trim();
+      if (!q) { trDrop.classList.add('hidden'); return; }
+      const hits = MARKET_ITEM_CATALOG.filter(x => `${x.name} ${x.id}`.toLowerCase().includes(q));
+      if (!hits.length) { trDrop.classList.add('hidden'); return; }
+      trDrop.innerHTML = hits.map(h => `<button type="button" data-pick-mkt="${h.id}" class="search-opt"><span class="text-bone font-semibold">${esc(h.name)}</span><span class="font-mono text-[11px] text-cinder">${esc(h.id)}</span></button>`).join('');
+      trDrop.querySelectorAll('[data-pick-mkt]').forEach(b => b.addEventListener('click', () => {
+        state.selectedMarketItem = b.dataset.pickMkt;
+        trInput.value = b.dataset.pickMkt;
+        trDrop.classList.add('hidden');
+        loadMarketHistory();
+      }));
+      trDrop.classList.remove('hidden');
+    });
+    document.addEventListener('click', e => { if (!trDrop.contains(e.target) && e.target !== trInput) trDrop.classList.add('hidden'); });
+
+    async function loadMarketHistory() {
+      const raw = trInput.value.trim();
+      if (!raw) return toast('Enter an item name or Albion item ID first', 'err');
+      const matched = MARKET_ITEM_CATALOG.find(x => x.id.toLowerCase() === raw.toLowerCase() || x.name.toLowerCase() === raw.toLowerCase());
+      const itemId = matched ? matched.id : raw.toUpperCase();
+      state.selectedMarketItem = itemId;
+      const city = document.getElementById('tr-city').value || 'Caerleon';
+      document.getElementById('tr-chart-title').textContent = `${itemId} — ${city} (${REGION_SHORT[state.server]})`;
+
+      let labels = [], vals = [], src = 'LIVE AODP';
+      try {
+        const json = await fetchWithTimeout(`${AODP_HOSTS[state.server]}/api/v2/stats/history/${encodeURIComponent(itemId)}.json?locations=${encodeURIComponent(city)}&time-scale=24`, 6500);
+        const entry = (json || []).find(d => d.data && d.data.length);
+        if (entry) {
+          labels = entry.data.slice(-14).map(p => p.timestamp.slice(5, 10));
+          vals = entry.data.slice(-14).map(p => p.avg_price);
+        }
+      } catch {}
+
+      if (!vals.length) {
+        src = 'NO LIVE DATA';
+        document.getElementById('tr-source-badge').textContent = src;
+        document.getElementById('tr-empty-state').textContent = `No live AODP history returned for ${itemId} in ${city} (${REGION_SHORT[state.server]}). Check the item ID or try another city.`;
+        document.getElementById('tr-empty-state').classList.remove('hidden');
+        document.getElementById('tr-chart-wrap').classList.add('hidden');
+        return;
+      }
+
+      document.getElementById('tr-source-badge').textContent = src;
+      document.getElementById('tr-empty-state').classList.add('hidden');
+      document.getElementById('tr-chart-wrap').classList.remove('hidden');
+      if (typeof Chart === 'undefined') {
+        document.getElementById('tr-empty-state').textContent = 'Chart library unavailable offline. Data loaded: ' + vals.length + ' points.';
+        document.getElementById('tr-empty-state').classList.remove('hidden');
+        document.getElementById('tr-chart-wrap').classList.add('hidden');
+        return;
+      }
+      const ctx = document.getElementById('trends-chart').getContext('2d');
+      if (state.charts.trends) state.charts.trends.destroy();
+      state.charts.trends = new Chart(ctx, {
+        type: 'line',
+        data: { labels, datasets: [{ label: 'Avg Silver', data: vals, borderColor: '#DC2626', backgroundColor: 'rgba(220,38,38,0.16)', fill: true, tension: 0.35, pointRadius: 3, pointBackgroundColor: '#F59E0B' }] },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#A89F9D' }, grid: { color: '#241D20' } }, y: { ticks: { color: '#A89F9D' }, grid: { color: '#241D20' } } } }
+      });
+      renderDashboard();
+    }
+    document.getElementById('tr-fetch-btn').addEventListener('click', loadMarketHistory);
+    document.getElementById('tr-clear-item').addEventListener('click', () => {
+      trInput.value = '';
+      state.selectedMarketItem = '';
+      document.getElementById('tr-clear-item').classList.add('hidden');
+      document.getElementById('tr-chart-title').textContent = 'Search an item to view price history';
+      document.getElementById('tr-source-badge').textContent = 'BLANK';
+      document.getElementById('tr-empty-state').textContent = 'Enter an item name or Albion item ID in the search bar above and click Load History.';
+      document.getElementById('tr-empty-state').classList.remove('hidden');
+      document.getElementById('tr-chart-wrap').classList.add('hidden');
+      renderDashboard();
+    });
+    trInput.addEventListener('input', () => {
+      document.getElementById('tr-clear-item').classList.toggle('hidden', !trInput.value.trim());
+    });
+    trInput.addEventListener('keydown', e => { if (e.key === 'Enter') { trDrop.classList.add('hidden'); loadMarketHistory(); } });
+    document.getElementById('explore-query').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('explore-search-btn').click(); });
+    document.getElementById('al-price').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('al-add-btn').click(); });
+
+    // ==================== 17. GOLD & PREMIUM (STARTS BLANK UNTIL SYNCED) ====================
+    function renderGoldView() {
+      const rate = state.goldByServer[state.server];
+      const hist = state.goldHistoryByServer[state.server] || [];
+      const plans = [
+        { label: '1 Month (30 Days)', gold: 3750, days: 30, save: 'Base' },
+        { label: '3 Months (90 Days)', gold: 10500, days: 90, save: 'Save 6.7%' },
+        { label: '6 Months (180 Days)', gold: 19500, days: 180, save: 'Save 13.3%' },
+        { label: '12 Months (360 Days)', gold: 36000, days: 360, save: 'Save 20.0%' }
+      ];
+
+      if (!rate) {
+        document.getElementById('gold-big-price').textContent = '—';
+        document.getElementById('gold-delta-badge').textContent = 'NOT SYNCED';
+        document.getElementById('gold-empty-state').classList.remove('hidden');
+        document.getElementById('gold-chart-wrap').classList.add('hidden');
+        document.getElementById('premium-cards').innerHTML = plans.map(p => `
+          <div class="war-card-elev p-3 flex items-center justify-between text-xs">
+            <div><div class="font-semibold text-bone">${p.label}</div><div class="text-cinder font-mono">${p.gold.toLocaleString()} Gold</div></div>
+            <div class="font-mono text-cinder">—</div>
+          </div>`).join('');
+        return;
+      }
+
+      document.getElementById('gold-big-price').textContent = `${rate.toLocaleString()} Silver`;
+      document.getElementById('gold-delta-badge').textContent = `LIVE ${REGION_SHORT[state.server]}`;
+      document.getElementById('gold-empty-state').classList.add('hidden');
+      document.getElementById('gold-chart-wrap').classList.remove('hidden');
+
+      document.getElementById('premium-cards').innerHTML = plans.map(p => {
+        const silver = p.gold * rate;
+        return `<div class="war-card-elev p-3 flex items-center justify-between text-xs">
+          <div><div class="font-semibold text-bone">${p.label}</div><div class="text-cinder font-mono">${p.gold.toLocaleString()} Gold · ${fmt(silver / p.days)}s/day</div></div>
+          <div class="text-right font-mono"><div class="text-ember-400 font-bold text-sm">${fmt(silver)}s</div><div class="text-jade text-[11px]">${p.save}</div></div>
+        </div>`;
+      }).join('');
+
+      const labels = hist.map(h => (h.timestamp || '').slice(5, 16).replace('T', ' '));
+      const data = hist.map(h => h.price);
+      if (typeof Chart === 'undefined') return;
+      const ctx = document.getElementById('gold-chart').getContext('2d');
+      if (state.charts.gold) state.charts.gold.destroy();
+      state.charts.gold = new Chart(ctx, {
+        type: 'line',
+        data: { labels, datasets: [{ label: 'Gold (Silver)', data, borderColor: '#F59E0B', backgroundColor: 'rgba(245,158,11,0.16)', fill: true, tension: 0.3, pointRadius: 2 }] },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#A89F9D' }, grid: { color: '#241D20' } }, y: { ticks: { color: '#A89F9D' }, grid: { color: '#241D20' } } } }
+      });
+    }
+
+    async function fetchLiveGold(srv = state.server) {
+      const count = state.goldTf === '24H' ? 24 : state.goldTf === '7D' ? 48 : 96;
+      try {
+        const rows = await fetchWithTimeout(`${AODP_HOSTS[srv]}/api/v2/stats/gold.json?count=${count}`, 7000);
+        if (Array.isArray(rows) && rows.length) {
+          state.goldByServer[srv] = rows[0].price;
+          state.goldHistoryByServer[srv] = [...rows].reverse();
+          if (srv === state.server) { updateGoldTicker(); renderGoldView(); renderDashboard(); }
+          toast(`Live Gold synced (${REGION_SHORT[srv]}): ${rows[0].price.toLocaleString()}s`, 'ok');
+        }
+      } catch (e) { toast(`Gold sync unavailable (${e.message})`, 'err'); }
+    }
+    document.querySelectorAll('.gtf-btn').forEach(b => b.addEventListener('click', () => {
+      document.querySelectorAll('.gtf-btn').forEach(x => x.classList.remove('active'));
+      b.classList.add('active'); state.goldTf = b.dataset.gtf; fetchLiveGold(state.server);
+    }));
+    document.getElementById('gold-sync-btn').addEventListener('click', () => fetchLiveGold(state.server));
+
+    // ==================== 17B. ISLAND PLANNER & BROWSER ALERT NOTIFICATIONS ====================
+    const ISLAND_MAX_PLOTS = { 1: 1, 2: 4, 3: 6, 4: 9, 5: 12, 6: 16 };
+    const CROP_META = {
+      T1_CARROT: { name: 'Carrots (T1)', seedCost: 2000, baseReturn: 0.0, unitPrice: 380 },
+      T2_BEAN: { name: 'Beans (T2)', seedCost: 3000, baseReturn: 0.33, unitPrice: 420 },
+      T3_WHEAT: { name: 'Wheat (T3)', seedCost: 5000, baseReturn: 0.60, unitPrice: 460 },
+      T4_TURNIP: { name: 'Turnips (T4)', seedCost: 7500, baseReturn: 0.73, unitPrice: 510 },
+      T5_CABBAGE: { name: 'Cabbage (T5)', seedCost: 10000, baseReturn: 0.80, unitPrice: 580 },
+      T6_POTATO: { name: 'Potatoes (T6)', seedCost: 15000, baseReturn: 0.86, unitPrice: 660 },
+      T7_CORN: { name: 'Bundle of Corn (T7)', seedCost: 22500, baseReturn: 0.91, unitPrice: 780 },
+      T8_PUMPKIN: { name: 'Pumpkin (T8)', seedCost: 30000, baseReturn: 0.93, unitPrice: 920 }
+    };
+
+    function renderIslandPlanner() {
+      const cropKey = document.getElementById('isl-crop').value;
+      const lvl = Number(document.getElementById('isl-level').value) || 6;
+      const maxPlots = ISLAND_MAX_PLOTS[lvl] || 16;
+      const plotsInp = document.getElementById('isl-plots');
+      plotsInp.max = maxPlots;
+      if (Number(plotsInp.value) > maxPlots) plotsInp.value = maxPlots;
+      const plots = Math.max(1, Math.min(maxPlots, Number(plotsInp.value) || 1));
+      const box = document.getElementById('isl-results');
+
+      if (!cropKey || !CROP_META[cropKey]) {
+        box.className = 'lg:col-span-7 war-card p-5 flex items-center justify-center text-xs text-cinder';
+        box.innerHTML = 'Select a Crop or Herb on the left to calculate seed return and harvest yields.';
+        return;
+      }
+      const meta = CROP_META[cropKey];
+      const prem = document.getElementById('isl-premium').checked;
+      const focus = document.getElementById('isl-focus').checked;
+      const city = document.getElementById('isl-city').value;
+      const cityBonus = city === 'Caerleon' ? 1.10 : 1.0;
+
+      const seedsNeeded = plots * 9;
+      const returnRate = Math.min(1.4, meta.baseReturn + (focus ? 0.35 : 0));
+      const seedsReturned = Math.round(seedsNeeded * returnRate);
+      const netSeedsToBuy = Math.max(0, seedsNeeded - seedsReturned);
+      const avgYieldPerPlot = (prem ? 9 : 4.5) * cityBonus;
+      const expectedYield = Math.round(plots * avgYieldPerPlot);
+      const estRevenue = expectedYield * meta.unitPrice;
+      const seedExpense = netSeedsToBuy * meta.seedCost;
+      const netProfit = estRevenue - seedExpense;
+
+      box.className = 'lg:col-span-7 war-card p-5 space-y-4';
+      box.innerHTML = `
+        <div class="flex items-center justify-between border-b border-rim pb-2">
+          <div><div class="font-display text-lg font-bold text-bone">${esc(meta.name)}</div><div class="text-xs text-cinder">${plots} Farm Plots · ${esc(city)}</div></div>
+          <span class="badge-live font-mono">${prem ? '2x Premium' : '1x Standard'}</span>
+        </div>
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs font-mono tabular">
+          <div class="war-card-elev p-3"><div class="text-cinder font-sans">Seeds Needed</div><div class="text-lg font-bold text-bone mt-1">${seedsNeeded}</div></div>
+          <div class="war-card-elev p-3"><div class="text-cinder font-sans">Seeds Returned</div><div class="text-lg font-bold text-ember-400 mt-1">${seedsReturned}</div></div>
+          <div class="war-card-elev p-3"><div class="text-cinder font-sans">Expected Yield</div><div class="text-lg font-bold text-jade mt-1">${expectedYield}</div></div>
+          <div class="war-card-elev p-3"><div class="text-cinder font-sans">Est. Daily Profit</div><div class="text-lg font-bold ${netProfit >= 0 ? 'text-jade' : 'text-exec'} mt-1">${netProfit >= 0 ? '+' : ''}${fmt(netProfit)}s</div></div>
+        </div>
+        <div class="text-xs text-cinder font-mono">Net Seeds to Buy: <strong class="text-bone">${netSeedsToBuy}</strong> · Est. Harvest Value: <strong class="text-ember-400">${fmt(estRevenue)}s</strong></div>
+      `;
+    }
+
+    ['isl-crop', 'isl-level', 'isl-plots', 'isl-city', 'isl-premium', 'isl-focus'].forEach(id => {
+      document.getElementById(id).addEventListener('input', renderIslandPlanner);
+    });
+    document.getElementById('isl-reset-btn').addEventListener('click', () => {
+      document.getElementById('isl-crop').value = '';
+      document.getElementById('isl-level').value = '6';
+      document.getElementById('isl-plots').value = '16';
+      renderIslandPlanner();
+    });
+
+    document.getElementById('enable-notif-btn').addEventListener('click', async () => {
+      if (!('Notification' in window)) return toast('Browser notifications not supported here', 'err');
+      const perm = await Notification.requestPermission();
+      toast(perm === 'granted' ? 'Price alert notifications enabled (5-min check)!' : 'Notification permission denied', perm === 'granted' ? 'ok' : 'err');
+    });
+
+    // ==================== 18. BOOTSTRAP ====================
+    document.getElementById('tr-city').innerHTML = SELL_CITIES.map(c => `<option value="${c}">${c}</option>`).join('');
+    initCraftingCities();
+    renderBandit();
+    setServer(state.server, false);
+    updateClocks();
+    setInterval(updateClocks, 1000);
+    renderBuilds();
+    renderLootTable();
+    renderLootSplit();
+    renderAvalon();
+    calculateCraft();
+    renderCraftQueue();
+    renderAlerts();
+    const daily = getTodaysDailyBonus();
+    toast(`Daily Bonus: ${daily.category} (${daily.cities})`, 'info');
+    if (window.lucide) lucide.createIcons();
+
+    // Auto-fetch Battleboard, Killboard, Builds & Rankings on startup and refresh every 15 seconds
+    fetchLiveBattles(state.server);
+    fetchLiveKills(state.server);
+    startBbAutoRefresh();
+    startKbAutoRefresh();
+  })();
+  </script>
+  <script>
+    if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js', { scope: './' }).catch(() => {});
+      });
+    }
+  </script>
+</body>
+</html>

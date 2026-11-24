@@ -1,0 +1,18 @@
+{
+  "name": "Albion Warlord Hub — Battleboard & Merchantry Ledger",
+  "short_name": "Warlord Hub",
+  "description": "Black Zone Warlord Albion Online Battleboard, Killboard, Crafting Ledger, Loot Split & Economy Suite for GitHub Pages.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0D0B0C",
+  "theme_color": "#0D0B0C",
+  "icons": [
+    {
+      "src": "./silver-ledger-brand-crest.webp",
+      "sizes": "1024x1024",
+      "type": "image/webp",
+      "purpose": "any maskable"
+    }
+  ]
+}
